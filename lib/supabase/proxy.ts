@@ -4,7 +4,7 @@ import type { Database } from '@/types/database.types'
 
 /**
  * Refresh Supabase session di setiap request.
- * Dipanggil dari middleware.ts root.
+ * Dipanggil dari proxy.ts root.
  * Juga bertugas sebagai auth guard: redirect ke /login
  * jika user belum login dan mencoba akses protected routes.
  */
