@@ -13,7 +13,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(ROUTES.LOGIN)
 
-  // Fetch detail chat room + verifikasi user adalah peserta
+
   const { data: chat, error } = await supabase
     .from('chats')
     .select(`
@@ -23,12 +23,12 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
       seller:profiles!chats_seller_id_fkey   ( id, full_name, avatar_url )
     `)
     .eq('id', chatId)
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`) // RLS extra check
+    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
     .single()
 
   if (error || !chat) notFound()
 
-  // Fetch pesan awal di server (SSR)
+
   const messagesResult = await getChatMessagesAction(chatId)
   const initialMessages = messagesResult.success ? messagesResult.data ?? [] : []
 
@@ -36,7 +36,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
 
   return (
     <div className="max-w-2xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
-      {/* Header Chat */}
+      {}
       <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl mb-4 flex-shrink-0">
         <a href={ROUTES.PRODUCT_DETAIL(chat.product.id)} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 flex-shrink-0">
@@ -61,7 +61,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
         </span>
       </div>
 
-      {/* Chat Room (Client Component untuk Realtime) */}
+      {}
       <ChatRoom
         chatId={chatId}
         initialMessages={initialMessages}

@@ -37,7 +37,7 @@ export default async function ChatsPage() {
                 href={ROUTES.CHAT_ROOM(chat.id)}
                 className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-blue-500/30 transition-all"
               >
-                {/* Foto produk */}
+                {}
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-800 flex-shrink-0">
                   {chat.product.image_urls[0] ? (
                     <img src={chat.product.image_urls[0]} alt={chat.product.title} className="w-full h-full object-cover" />
@@ -46,7 +46,7 @@ export default async function ChatsPage() {
                   )}
                 </div>
 
-                {/* Info */}
+                {}
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium text-sm truncate">{chat.product.title}</p>
                   <p className="text-slate-500 text-xs mb-1">
@@ -57,7 +57,7 @@ export default async function ChatsPage() {
                   )}
                 </div>
 
-                {/* Waktu */}
+                {}
                 <div className="flex-shrink-0 text-right">
                   {chat.last_message_at && (
                     <p className="text-slate-600 text-xs">{formatRelativeTime(chat.last_message_at)}</p>

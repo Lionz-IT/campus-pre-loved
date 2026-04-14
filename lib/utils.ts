@@ -1,12 +1,12 @@
 import { clsx, type ClassValue } from 'clsx'
 
-// ─── Tailwind class merger ────────────────────────────────────────────────────
-// Install clsx jika belum: npm install clsx
+
+
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
 }
 
-// ─── Format harga ke Rupiah ───────────────────────────────────────────────────
+
 export function formatPrice(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) return 'Harga Barter'
   return new Intl.NumberFormat('id-ID', {
@@ -17,7 +17,7 @@ export function formatPrice(amount: number | null | undefined): string {
   }).format(amount)
 }
 
-// ─── Format tanggal relatif (e.g. "3 jam lalu") ──────────────────────────────
+
 export function formatRelativeTime(date: string | Date): string {
   const now   = new Date()
   const past  = new Date(date)
@@ -34,7 +34,7 @@ export function formatRelativeTime(date: string | Date): string {
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(past)
 }
 
-// ─── Format tanggal lengkap ───────────────────────────────────────────────────
+
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat('id-ID', {
     day:    'numeric',
@@ -45,23 +45,23 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date))
 }
 
-// ─── Generate nama file unik untuk Supabase Storage ──────────────────────────
+
 export function generateStorageFileName(userId: string, originalName: string): string {
   const ext  = originalName.split('.').pop() ?? 'jpg'
   const rand = Math.random().toString(36).slice(2, 8)
   const ts   = Date.now()
-  // Path: {userId}/{timestamp}_{random}.{ext}
-  // → matching Storage RLS policy: foldername[0] = userId
+
+
   return `${userId}/${ts}_${rand}.${ext}`
 }
 
-// ─── Truncate teks panjang ────────────────────────────────────────────────────
+
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength).trimEnd()}…`
 }
 
-// ─── Ekstrak inisial nama untuk Avatar fallback ───────────────────────────────
+
 export function getInitials(fullName: string): string {
   return fullName
     .split(' ')

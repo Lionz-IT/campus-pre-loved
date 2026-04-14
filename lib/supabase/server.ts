@@ -2,11 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/database.types'
 
-/**
- * Supabase Server Client
- * Gunakan di: Server Components, Server Actions, Route Handlers
- * RLS aktif → user hanya bisa akses data miliknya sesuai policy
- */
+
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies()
 
@@ -24,8 +20,8 @@ export async function createSupabaseServerClient() {
               cookieStore.set(name, value, options),
             )
           } catch {
-            // Diabaikan jika dipanggil dari Server Component (read-only)
-            // Middleware sudah menangani refresh session
+
+
           }
         },
       },
@@ -33,11 +29,7 @@ export async function createSupabaseServerClient() {
   )
 }
 
-/**
- * Supabase Admin Client (Service Role)
- * Gunakan di: API Routes server-side saja, JANGAN expose ke client
- * Melewati RLS — hanya untuk operasi admin
- */
+
 export function createSupabaseAdminClient() {
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

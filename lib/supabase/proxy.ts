@@ -2,12 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from '@/types/database.types'
 
-/**
- * Refresh Supabase session di setiap request.
- * Dipanggil dari proxy.ts root.
- * Juga bertugas sebagai auth guard: redirect ke /login
- * jika user belum login dan mencoba akses protected routes.
- */
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -32,12 +27,12 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  // Refresh token — JANGAN hapus baris ini
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes: semua route kecuali (auth)/* dan halaman publik
+
   const { pathname } = request.nextUrl
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/verify-email')
   const isPublicRoute = pathname === '/' || pathname.startsWith('/products')
@@ -49,7 +44,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Jika sudah login dan mencoba akses halaman auth, redirect ke home
+
   if (user && isAuthRoute) {
     return NextResponse.redirect(new URL('/', request.url))
   }

@@ -19,7 +19,7 @@ export default async function HomePage({
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
+      {}
       <section className="text-center py-12 space-y-4">
         <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent">
           Marketplace Mahasiswa PENS
@@ -44,7 +44,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* Filter Kategori */}
+      {}
       <section>
         <div className="flex gap-2 flex-wrap">
           <a
@@ -71,7 +71,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* Grid Produk */}
+      {}
       <section>
         {products.length === 0 ? (
           <div className="text-center py-20 text-slate-500">
@@ -87,7 +87,7 @@ export default async function HomePage({
                 href={`/products/${product.id}`}
                 className="group bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-blue-500/50 hover:bg-white/10 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10"
               >
-                {/* Foto */}
+                {}
                 <div className="aspect-square bg-slate-800 overflow-hidden">
                   {product.image_urls[0] ? (
                     <img
@@ -102,7 +102,7 @@ export default async function HomePage({
                   )}
                 </div>
 
-                {/* Info */}
+                {}
                 <div className="p-3 space-y-1">
                   <p className="text-white font-medium text-sm line-clamp-2 leading-snug">
                     {product.title}

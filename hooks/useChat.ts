@@ -5,23 +5,19 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { sendMessageAction } from '@/actions/chat.actions'
 import type { MessageWithSender } from '@/types'
 
-/**
- * Hook untuk real-time chat room.
- * - initialMessages: dari Server Component (sudah ter-fetch via RSC)
- * - Supabase Realtime menambahkan pesan baru tanpa refresh
- */
+
 export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
   const [messages, setMessages]   = useState<MessageWithSender[]>(initialMessages)
   const [isSending, setIsSending] = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const bottomRef                 = useRef<HTMLDivElement>(null)
 
-  // Scroll ke bawah saat ada pesan baru
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Subscribe ke Realtime
+
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
 
@@ -36,7 +32,7 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
           filter: `chat_id=eq.${chatId}`,
         },
         async (payload) => {
-          // Fetch sender info untuk pesan baru
+
           const { data: sender } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
@@ -49,7 +45,7 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
           }
 
           setMessages((prev) => {
-            // Hindari duplikasi jika pesan sudah ada (optimistic update)
+
             if (prev.some((m) => m.id === newMessage.id)) return prev
             return [...prev, newMessage]
           })
@@ -62,7 +58,7 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
     }
   }, [chatId])
 
-  // Kirim pesan
+
   const sendMessage = useCallback(
     async (content: string) => {
       if (!content.trim() || isSending) return

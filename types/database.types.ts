@@ -1,13 +1,4 @@
-/**
- * PLACEHOLDER — Auto-generated oleh Supabase CLI.
- * Jangan edit file ini secara manual!
- *
- * Cara generate ulang setelah mengubah schema database:
- *   npx supabase gen types typescript --project-id <your-project-id> > types/database.types.ts
- *
- * Atau menggunakan Supabase CLI lokal:
- *   npx supabase gen types typescript --local > types/database.types.ts
- */
+
 
 export type Json =
   | string

@@ -28,7 +28,7 @@ export default async function NewProductPage() {
         }
       }} className="space-y-5">
 
-        {/* Judul */}
+        {}
         <div>
           <label htmlFor="title" className="block text-slate-300 text-sm font-medium mb-1.5">
             Judul Iklan *
@@ -40,7 +40,7 @@ export default async function NewProductPage() {
           />
         </div>
 
-        {/* Tipe Listing */}
+        {}
         <div>
           <label className="block text-slate-300 text-sm font-medium mb-1.5">Tipe Transaksi *</label>
           <div className="flex gap-3">
@@ -55,7 +55,7 @@ export default async function NewProductPage() {
           </div>
         </div>
 
-        {/* Harga */}
+        {}
         <div>
           <label htmlFor="price" className="block text-slate-300 text-sm font-medium mb-1.5">
             Harga (Rp) <span className="text-slate-500">— kosongkan untuk barter</span>
@@ -67,7 +67,7 @@ export default async function NewProductPage() {
           />
         </div>
 
-        {/* Kategori */}
+        {}
         <div>
           <label htmlFor="category" className="block text-slate-300 text-sm font-medium mb-1.5">Kategori *</label>
           <select
@@ -81,7 +81,7 @@ export default async function NewProductPage() {
           </select>
         </div>
 
-        {/* Kondisi */}
+        {}
         <div>
           <label htmlFor="condition" className="block text-slate-300 text-sm font-medium mb-1.5">Kondisi Barang *</label>
           <select
@@ -94,7 +94,7 @@ export default async function NewProductPage() {
           </select>
         </div>
 
-        {/* Deskripsi */}
+        {}
         <div>
           <label htmlFor="description" className="block text-slate-300 text-sm font-medium mb-1.5">Deskripsi</label>
           <textarea
@@ -104,7 +104,7 @@ export default async function NewProductPage() {
           />
         </div>
 
-        {/* Lokasi COD */}
+        {}
         <div>
           <label htmlFor="campus_location" className="block text-slate-300 text-sm font-medium mb-1.5">📍 Titik COD</label>
           <select
@@ -117,24 +117,19 @@ export default async function NewProductPage() {
           </select>
         </div>
 
-        {/* Foto */}
+        {}
         <div>
           <label htmlFor="images" className="block text-slate-300 text-sm font-medium mb-1.5">
             Foto Produk <span className="text-slate-500">(maks 5 foto)</span>
           </label>
           <input
-            id="images" name="images" type="file" multiple accept="image/*"
-            className="w-full bg-white/5 border border-white/10 text-slate-400 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:text-xs"
-          />
-        </div>
-
-        {/* Bisa Nego */}
+            id="images" name="images" type="file" multiple accept="image}
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" name="is_negotiable" value="true" defaultChecked className="w-4 h-4 rounded accent-blue-600" />
           <span className="text-slate-300 text-sm">Harga bisa nego</span>
         </label>
 
-        {/* Submit */}
+        {}
         <button
           type="submit"
           className="w-full py-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white rounded-xl font-semibold text-base transition-all shadow-lg shadow-blue-600/25"

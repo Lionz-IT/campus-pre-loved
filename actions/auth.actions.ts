@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { ROUTES } from '@/lib/constants/routes'
 
-// ─── Register ─────────────────────────────────────────────────────────────────
+
 export async function registerAction(formData: FormData): Promise<ActionResult> {
   const raw = {
     full_name:        formData.get('full_name'),
@@ -16,7 +16,7 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     confirm_password: formData.get('confirm_password'),
   }
 
-  // Layer 1: Validasi Zod (termasuk domain email PENS)
+
   const parsed = registerSchema.safeParse(raw)
   if (!parsed.success) {
     const firstError = Object.values(parsed.error.flatten().fieldErrors).flat()[0]
@@ -34,11 +34,11 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
   })
 
   if (error) return { success: false, error: error.message }
-  // Trigger di DB akan otomatis membuat row di public.profiles
+
   return { success: true }
 }
 
-// ─── Login ────────────────────────────────────────────────────────────────────
+
 export async function loginAction(formData: FormData): Promise<ActionResult> {
   const raw = {
     campus_email: formData.get('campus_email'),
@@ -63,7 +63,7 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   redirect(ROUTES.HOME)
 }
 
-// ─── Logout ───────────────────────────────────────────────────────────────────
+
 export async function logoutAction(): Promise<void> {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut()
@@ -71,7 +71,7 @@ export async function logoutAction(): Promise<void> {
   redirect(ROUTES.LOGIN)
 }
 
-// ─── Update Profile ───────────────────────────────────────────────────────────
+
 export async function updateProfileAction(formData: FormData): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()

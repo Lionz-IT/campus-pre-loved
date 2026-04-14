@@ -43,7 +43,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Daftar Pesan */}
+      {}
       <div className="flex-1 overflow-y-auto space-y-3 p-2">
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} isOwn={msg.sender_id === currentUserId} isSeller={isSeller} chatId={chatId} />
@@ -55,7 +55,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
         <p className="text-red-400 text-xs text-center px-4 py-1">{error}</p>
       )}
 
-      {/* Input Area */}
+      {}
       {product.status !== 'sold' && (
         <div className="flex-shrink-0 p-3 bg-white/5 border border-white/10 rounded-2xl mt-3">
           <div className="flex gap-2 items-end">
@@ -67,7 +67,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
               rows={1}
               className="flex-1 bg-transparent text-white placeholder-slate-500 text-sm resize-none outline-none min-h-[36px] max-h-24"
             />
-            {/* Tombol Tawar (hanya pembeli) */}
+            {}
             {!isSeller && product.status === 'available' && (
               <button
                 onClick={() => setShowOfferModal(true)}
@@ -87,7 +87,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
         </div>
       )}
 
-      {/* Modal Penawaran Harga */}
+      {}
       {showOfferModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4">
@@ -137,7 +137,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
   )
 }
 
-// ─── Komponen Bubble Pesan ────────────────────────────────────────────────────
+
 function MessageBubble({ message, isOwn, isSeller, chatId }: {
   message:  MessageWithSender
   isOwn:    boolean
@@ -178,7 +178,7 @@ function MessageBubble({ message, isOwn, isSeller, chatId }: {
             <p className="text-slate-400 text-xs italic">"{payload.note ?? payload.reason}"</p>
           )}
 
-          {/* Tombol terima/tolak untuk penjual */}
+          {}
           {message.message_type === 'offer' && isSeller && !isOwn && (
             <div className="flex gap-2 pt-1">
               <button
@@ -214,7 +214,7 @@ function MessageBubble({ message, isOwn, isSeller, chatId }: {
     )
   }
 
-  // Pesan teks biasa
+
   return (
     <div className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
       {!isOwn && (

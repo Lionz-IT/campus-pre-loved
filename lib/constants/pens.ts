@@ -1,4 +1,4 @@
-// ─── PENS Email Domains ───────────────────────────────────────────────────────
+
 export const PENS_EMAIL_DOMAINS = [
   '@mhs.pens.ac.id',
   '@it.student.pens.ac.id',
@@ -7,7 +7,7 @@ export const PENS_EMAIL_DOMAINS = [
 
 export type PensEmailDomain = (typeof PENS_EMAIL_DOMAINS)[number]
 
-// ─── COD Meeting Points di Area PENS ─────────────────────────────────────────
+
 export const CAMPUS_COD_LOCATIONS = [
   'Lobby Gedung A (Teknik Elektro)',
   'Kantin Teknik PENS',
@@ -24,7 +24,7 @@ export const CAMPUS_COD_LOCATIONS = [
 export const PENS_EMAIL_REGEX =
   /^[A-Za-z0-9._%+\-]+@(mhs\.pens\.ac\.id|it\.student\.pens\.ac\.id|pens\.ac\.id)$/i
 
-// ─── Kategori Produk ──────────────────────────────────────────────────────────
+
 export const PRODUCT_CATEGORIES = [
   { value: 'microcontroller',      label: 'Mikrokontroler',       emoji: '🤖' },
   { value: 'electronic_component', label: 'Komponen Elektronika', emoji: '⚡' },
@@ -39,7 +39,7 @@ export const PRODUCT_CATEGORIES = [
 
 export type ProductCategoryValue = (typeof PRODUCT_CATEGORIES)[number]['value']
 
-// ─── Kondisi Barang ───────────────────────────────────────────────────────────
+
 export const PRODUCT_CONDITIONS = [
   { value: 'new',       label: 'Baru',             description: 'Belum pernah dipakai, masih ada segel' },
   { value: 'like_new',  label: 'Seperti Baru',     description: 'Pernah dipakai 1-2x, tidak ada cacat' },
@@ -50,7 +50,7 @@ export const PRODUCT_CONDITIONS = [
 
 export type ProductConditionValue = (typeof PRODUCT_CONDITIONS)[number]['value']
 
-// ─── Status Produk (State Machine) ───────────────────────────────────────────
+
 export const PRODUCT_STATUS_LABELS = {
   available: { label: 'Tersedia',    color: 'green'  },
   booked:    { label: 'Di-booking',  color: 'yellow' },

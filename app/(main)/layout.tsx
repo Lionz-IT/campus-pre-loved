@@ -2,24 +2,18 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ROUTES } from '@/lib/constants/routes'
 
-/**
- * Layout untuk semua halaman yang membutuhkan:
- * 1. User sudah terautentikasi
- * 2. Navbar dan struktur halaman utama
- *
- * Server Component — fetch user di server, redirect jika belum login.
- */
+
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Halaman dalam (main) wajib login (kecuali / dan /products sudah ditangani middleware)
-  // Layout ini sebagai safety net tambahan
+
+
   if (!user) redirect(ROUTES.LOGIN)
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {/* Navbar — akan dibuat sebagai komponen terpisah */}
+      {}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
         <nav className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <a href={ROUTES.HOME} className="text-xl font-bold text-white">

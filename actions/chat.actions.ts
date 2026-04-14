@@ -6,7 +6,7 @@ import type { ActionResult, ChatWithDetails, MessageWithSender } from '@/types'
 import { ROUTES } from '@/lib/constants/routes'
 import { revalidatePath } from 'next/cache'
 
-// ─── Buat Chat Room ────────────────────────────────────────────────────────────
+
 export async function createChatRoomAction(
   productId: string,
   sellerId:  string,
@@ -16,7 +16,7 @@ export async function createChatRoomAction(
   if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
   if (user.id === sellerId) return { success: false, error: 'Kamu tidak bisa chat dengan dirimu sendiri' }
 
-  // Coba buat room baru; jika sudah ada (UNIQUE constraint), ambil yang existing
+
   const { data, error } = await supabase
     .from('chats')
     .upsert(
@@ -30,7 +30,7 @@ export async function createChatRoomAction(
   return { success: true, data: { chatId: data.id } }
 }
 
-// ─── Ambil Semua Chat (Inbox) ──────────────────────────────────────────────────
+
 export async function getMyChatsAction(): Promise<ActionResult<ChatWithDetails[]>> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -51,7 +51,7 @@ export async function getMyChatsAction(): Promise<ActionResult<ChatWithDetails[]
   return { success: true, data: data as ChatWithDetails[] }
 }
 
-// ─── Ambil Pesan dalam Chat Room ───────────────────────────────────────────────
+
 export async function getChatMessagesAction(
   chatId: string,
 ): Promise<ActionResult<MessageWithSender[]>> {
@@ -72,7 +72,7 @@ export async function getChatMessagesAction(
   return { success: true, data: data as MessageWithSender[] }
 }
 
-// ─── Kirim Pesan Teks Biasa ────────────────────────────────────────────────────
+
 export async function sendMessageAction(
   chatId:  string,
   content: string,
@@ -92,7 +92,7 @@ export async function sendMessageAction(
   return { success: true }
 }
 
-// ─── TAWAR-MENAWAR: Kirim Penawaran ───────────────────────────────────────────
+
 export async function sendOfferAction(
   chatId:  string,
   payload: { offered_price: number; original_price?: number; note?: string },
@@ -117,7 +117,7 @@ export async function sendOfferAction(
   return { success: true }
 }
 
-// ─── TAWAR-MENAWAR: Terima Penawaran ──────────────────────────────────────────
+
 export async function acceptOfferAction(
   chatId:  string,
   payload: { agreed_price: number; meet_point: string; meet_time: string },
@@ -143,7 +143,7 @@ export async function acceptOfferAction(
   return { success: true }
 }
 
-// ─── TAWAR-MENAWAR: Tolak Penawaran ───────────────────────────────────────────
+
 export async function rejectOfferAction(
   chatId:  string,
   payload: { counter_offer?: number; reason?: string },
@@ -168,7 +168,7 @@ export async function rejectOfferAction(
   return { success: true }
 }
 
-// ─── Tandai Pesan Sudah Dibaca ─────────────────────────────────────────────────
+
 export async function markMessagesReadAction(chatId: string): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -179,7 +179,7 @@ export async function markMessagesReadAction(chatId: string): Promise<ActionResu
     .update({ is_read: true })
     .eq('chat_id', chatId)
     .eq('is_read', false)
-    .neq('sender_id', user.id) // hanya pesan dari orang lain
+    .neq('sender_id', user.id)
 
   if (error) return { success: false, error: error.message }
   revalidatePath(ROUTES.CHAT_ROOM(chatId))

@@ -8,13 +8,13 @@ import type { ActionResult, ProductWithSeller } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-// ─── CREATE Produk ─────────────────────────────────────────────────────────────
+
 export async function createProductAction(formData: FormData): Promise<ActionResult<{ id: string }>> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
 
-  // Validasi form
+
   const raw = Object.fromEntries(formData)
   const parsed = productSchema.safeParse({
     ...raw,
@@ -25,7 +25,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
     return { success: false, error: firstError ?? 'Data produk tidak valid' }
   }
 
-  // Upload foto jika ada (maks 5 file)
+
   const imageFiles = formData.getAll('images') as File[]
   const imageUrls: string[] = []
 
@@ -43,7 +43,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
     imageUrls.push(publicUrl)
   }
 
-  // Insert produk
+
   const { data, error } = await supabase
     .from('products')
     .insert({
@@ -60,7 +60,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
   return { success: true, data: { id: data.id } }
 }
 
-// ─── UPDATE Produk ─────────────────────────────────────────────────────────────
+
 export async function updateProductAction(
   productId: string,
   formData: FormData,
@@ -69,7 +69,7 @@ export async function updateProductAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  // Pastikan hanya pemilik yang bisa edit (RLS juga menjaga ini)
+
   const raw = Object.fromEntries(formData)
   const parsed = productSchema.safeParse({
     ...raw,
@@ -84,7 +84,7 @@ export async function updateProductAction(
     .from('products')
     .update(parsed.data)
     .eq('id', productId)
-    .eq('seller_id', user.id) // double-check ownership
+    .eq('seller_id', user.id)
 
   if (error) return { success: false, error: error.message }
   revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
@@ -92,7 +92,7 @@ export async function updateProductAction(
   return { success: true }
 }
 
-// ─── SOFT DELETE Produk ────────────────────────────────────────────────────────
+
 export async function deleteProductAction(productId: string): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -110,7 +110,7 @@ export async function deleteProductAction(productId: string): Promise<ActionResu
   redirect(ROUTES.PROFILE)
 }
 
-// ─── STATE MACHINE: Booking ────────────────────────────────────────────────────
+
 export async function bookProductAction(
   productId: string,
   chatId: string,
@@ -119,16 +119,16 @@ export async function bookProductAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  // Update status → 'booked' (DB trigger guard_product_status memvalidasi transisi)
+
   const { error } = await supabase
     .from('products')
     .update({ status: 'booked', booked_by: user.id })
     .eq('id', productId)
-    .eq('status', 'available') // hanya jika masih tersedia
+    .eq('status', 'available')
 
   if (error) return { success: false, error: error.message }
 
-  // Kirim pesan sistem ke chat room
+
   await supabase.from('messages').insert({
     chat_id:      chatId,
     sender_id:    user.id,
@@ -141,7 +141,7 @@ export async function bookProductAction(
   return { success: true }
 }
 
-// ─── STATE MACHINE: Cancel Booking ────────────────────────────────────────────
+
 export async function cancelBookingAction(
   productId: string,
   chatId: string,
@@ -150,12 +150,12 @@ export async function cancelBookingAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  // Update status → 'available' (DB trigger otomatis NULL-kan booked_by)
+
   const { error } = await supabase
     .from('products')
     .update({ status: 'available' })
     .eq('id', productId)
-    .eq('booked_by', user.id) // hanya pembeli yang booking yang bisa cancel
+    .eq('booked_by', user.id)
 
   if (error) return { success: false, error: error.message }
 
@@ -171,7 +171,7 @@ export async function cancelBookingAction(
   return { success: true }
 }
 
-// ─── STATE MACHINE: Mark as Sold ──────────────────────────────────────────────
+
 export async function markAsSoldAction(
   productId: string,
   chatId: string,
@@ -180,13 +180,13 @@ export async function markAsSoldAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  // Hanya penjual yang bisa tandai terjual
+
   const { error } = await supabase
     .from('products')
     .update({ status: 'sold' })
     .eq('id', productId)
     .eq('seller_id', user.id)
-    .eq('status', 'booked') // harus sudah di-booking dulu
+    .eq('status', 'booked')
 
   if (error) return { success: false, error: error.message }
 
@@ -202,7 +202,7 @@ export async function markAsSoldAction(
   return { success: true }
 }
 
-// ─── GET Feed Marketplace ──────────────────────────────────────────────────────
+
 export async function getMarketplaceFeedAction(params?: {
   category?: string
   search?:   string
