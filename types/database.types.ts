@@ -146,6 +146,54 @@ export type Database = {
           { foreignKeyName: 'messages_sender_id_fkey'; columns: ['sender_id']; referencedRelation: 'profiles'; referencedColumns: ['id'] },
         ]
       }
+      wishlists: {
+        Row: {
+          id:         string
+          user_id:    string
+          product_id: string
+          created_at: string
+        }
+        Insert: {
+          user_id:    string
+          product_id: string
+        }
+        Update: {
+          user_id?:    string
+          product_id?: string
+        }
+        Relationships: [
+          { foreignKeyName: 'wishlists_user_id_fkey';    columns: ['user_id'];    referencedRelation: 'profiles'; referencedColumns: ['id'] },
+          { foreignKeyName: 'wishlists_product_id_fkey'; columns: ['product_id']; referencedRelation: 'products'; referencedColumns: ['id'] },
+        ]
+      }
+      reviews: {
+        Row: {
+          id:          string
+          product_id:  string
+          seller_id:   string
+          reviewer_id: string
+          rating:      number
+          comment:     string | null
+          created_at:  string
+          updated_at:  string
+        }
+        Insert: {
+          product_id:  string
+          seller_id:   string
+          reviewer_id: string
+          rating:      number
+          comment?:    string | null
+        }
+        Update: {
+          rating?:  number
+          comment?: string | null
+        }
+        Relationships: [
+          { foreignKeyName: 'reviews_product_id_fkey';  columns: ['product_id'];  referencedRelation: 'products'; referencedColumns: ['id'] },
+          { foreignKeyName: 'reviews_seller_id_fkey';   columns: ['seller_id'];   referencedRelation: 'profiles'; referencedColumns: ['id'] },
+          { foreignKeyName: 'reviews_reviewer_id_fkey'; columns: ['reviewer_id']; referencedRelation: 'profiles'; referencedColumns: ['id'] },
+        ]
+      }
     }
     Views: {
       v_marketplace_feed: {

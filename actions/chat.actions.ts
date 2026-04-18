@@ -185,3 +185,28 @@ export async function markMessagesReadAction(chatId: string): Promise<ActionResu
   revalidatePath(ROUTES.CHAT_ROOM(chatId))
   return { success: true }
 }
+
+
+export async function getUnreadCountAction(): Promise<ActionResult<number>> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: true, data: 0 }
+
+  const { data: chats } = await supabase
+    .from('chats')
+    .select('id')
+    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+
+  if (!chats || chats.length === 0) return { success: true, data: 0 }
+
+  const chatIds = chats.map((c) => c.id)
+  const { count, error } = await supabase
+    .from('messages')
+    .select('*', { count: 'exact', head: true })
+    .in('chat_id', chatIds)
+    .eq('is_read', false)
+    .neq('sender_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true, data: count ?? 0 }
+}

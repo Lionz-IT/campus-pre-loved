@@ -26,15 +26,15 @@ export const PENS_EMAIL_REGEX =
 
 
 export const PRODUCT_CATEGORIES = [
-  { value: 'microcontroller',      label: 'Mikrokontroler',       emoji: '🤖' },
-  { value: 'electronic_component', label: 'Komponen Elektronika', emoji: '⚡' },
-  { value: 'module',               label: 'Modul',                emoji: '🔌' },
-  { value: 'tool',                 label: 'Alat & Perkakas',      emoji: '🔧' },
-  { value: 'book_module',          label: 'Buku & Modul Kuliah',  emoji: '📚' },
-  { value: 'laptop_accessory',     label: 'Aksesoris Laptop',     emoji: '💻' },
-  { value: 'clothing',             label: 'Pakaian & Merchandise', emoji: '👕' },
-  { value: 'stationery',           label: 'Alat Tulis & Gambar',  emoji: '✏️' },
-  { value: 'other',                label: 'Lainnya',              emoji: '📦' },
+  { value: 'microcontroller',      label: 'Mikrokontroler',       icon: 'cpu'         },
+  { value: 'electronic_component', label: 'Komponen Elektronika', icon: 'zap'         },
+  { value: 'module',               label: 'Modul',                icon: 'circuit'     },
+  { value: 'tool',                 label: 'Alat & Perkakas',      icon: 'wrench'      },
+  { value: 'book_module',          label: 'Buku & Modul Kuliah',  icon: 'book'        },
+  { value: 'laptop_accessory',     label: 'Aksesoris Laptop',     icon: 'laptop'      },
+  { value: 'clothing',             label: 'Pakaian & Merchandise', icon: 'shirt'      },
+  { value: 'stationery',           label: 'Alat Tulis & Gambar',  icon: 'pencil'      },
+  { value: 'other',                label: 'Lainnya',              icon: 'package'     },
 ] as const
 
 export type ProductCategoryValue = (typeof PRODUCT_CATEGORIES)[number]['value']

@@ -1,9 +1,19 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { notFound, redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getChatMessagesAction } from '@/actions/chat.actions'
 import { ROUTES } from '@/lib/constants/routes'
-import ChatRoom from '@/components/chat/ChatRoom'
+import Badge from '@/components/ui/Badge'
+
+const ChatRoom = dynamic(() => import('@/components/chat/ChatRoom'), {
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+})
 
 export const metadata: Metadata = { title: 'Chat' }
 
@@ -13,55 +23,53 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(ROUTES.LOGIN)
 
-
-  const { data: chat, error } = await supabase
-    .from('chats')
-    .select(`
-      *,
-      product:products!chats_product_id_fkey ( id, title, image_urls, status, price, seller_id ),
-      buyer:profiles!chats_buyer_id_fkey     ( id, full_name, avatar_url ),
-      seller:profiles!chats_seller_id_fkey   ( id, full_name, avatar_url )
-    `)
-    .eq('id', chatId)
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-    .single()
+  const [{ data: chat, error }, messagesResult] = await Promise.all([
+    supabase
+      .from('chats')
+      .select(`
+        *,
+        product:products!chats_product_id_fkey ( id, title, image_urls, status, price, seller_id ),
+        buyer:profiles!chats_buyer_id_fkey     ( id, full_name, avatar_url ),
+        seller:profiles!chats_seller_id_fkey   ( id, full_name, avatar_url )
+      `)
+      .eq('id', chatId)
+      .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+      .single(),
+    getChatMessagesAction(chatId),
+  ])
 
   if (error || !chat) notFound()
 
-
-  const messagesResult = await getChatMessagesAction(chatId)
   const initialMessages = messagesResult.success ? messagesResult.data ?? [] : []
 
   const isSeller = user.id === chat.seller_id
+  const statusVariant = chat.product.status === 'available' ? 'green' as const : chat.product.status === 'booked' ? 'yellow' as const : 'gray' as const
+  const statusLabel = chat.product.status === 'available' ? 'Tersedia' : chat.product.status === 'booked' ? 'Di-booking' : 'Terjual'
 
   return (
     <div className="max-w-2xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
-      {}
-      <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl mb-4 flex-shrink-0">
+      <div className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-2xl mb-4 flex-shrink-0">
         <a href={ROUTES.PRODUCT_DETAIL(chat.product.id)} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-          <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 flex-shrink-0">
+          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
             {chat.product.image_urls[0]
-              ? <img src={chat.product.image_urls[0]} alt={chat.product.title} className="w-full h-full object-cover" />
-              : <div className="w-full h-full flex items-center justify-center text-xl">📷</div>
+              ? <Image src={chat.product.image_urls[0]} alt={chat.product.title} fill sizes="48px" className="object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                  </svg>
+                </div>
             }
           </div>
           <div className="min-w-0">
-            <p className="text-white font-medium text-sm truncate">{chat.product.title}</p>
-            <p className="text-slate-500 text-xs">
+            <p className="text-gray-900 font-medium text-sm truncate">{chat.product.title}</p>
+            <p className="text-gray-400 text-xs">
               {isSeller ? `Pembeli: ${chat.buyer.full_name}` : `Penjual: ${chat.seller.full_name}`}
             </p>
           </div>
         </a>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
-          chat.product.status === 'available' ? 'bg-green-500/20 text-green-400'
-          : chat.product.status === 'booked'  ? 'bg-yellow-500/20 text-yellow-400'
-          : 'bg-slate-500/20 text-slate-400'
-        }`}>
-          {chat.product.status === 'available' ? 'Tersedia' : chat.product.status === 'booked' ? 'Di-booking' : 'Terjual'}
-        </span>
+        <Badge variant={statusVariant}>{statusLabel}</Badge>
       </div>
 
-      {}
       <ChatRoom
         chatId={chatId}
         initialMessages={initialMessages}

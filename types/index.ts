@@ -82,3 +82,40 @@ export type MessagePayload =
 export type ActionResult<T = void> =
   | { success: true;  data?: T }
   | { success: false; error: string }
+
+
+// ── Wishlists ──────────────────────────────────────────────
+
+export interface Wishlist {
+  id:         string
+  user_id:    string
+  product_id: string
+  created_at: string
+}
+
+export type WishlistProduct = Product & {
+  seller: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>
+}
+
+
+// ── Reviews ────────────────────────────────────────────────
+
+export interface Review {
+  id:          string
+  product_id:  string
+  seller_id:   string
+  reviewer_id: string
+  rating:      number
+  comment:     string | null
+  created_at:  string
+  updated_at:  string
+}
+
+export type ReviewWithReviewer = Review & {
+  reviewer: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>
+}
+
+export type ReviewWithProduct = Review & {
+  product:  Pick<Product, 'id' | 'title' | 'image_urls'>
+  reviewer: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>
+}

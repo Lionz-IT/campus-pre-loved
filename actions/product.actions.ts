@@ -194,7 +194,7 @@ export async function markAsSoldAction(
     chat_id:      chatId,
     sender_id:    user.id,
     message_type: 'system',
-    content:      '🎉 Transaksi selesai! Barang sudah terjual. Terima kasih!',
+    content:      'Transaksi selesai! Barang sudah terjual. Terima kasih!',
     payload:      { event: 'item_sold', from: 'booked', to: 'sold' },
   })
 
@@ -204,13 +204,15 @@ export async function markAsSoldAction(
 
 
 export async function getMarketplaceFeedAction(params?: {
-  category?: string
-  search?:   string
-  page?:     number
-  limit?:    number
+  category?:  string
+  search?:    string
+  sort?:      string
+  condition?: string
+  page?:      number
+  limit?:     number
 }): Promise<ActionResult<ProductWithSeller[]>> {
   const supabase = await createSupabaseServerClient()
-  const { category, search, page = 1, limit = 20 } = params ?? {}
+  const { category, search, sort, condition, page = 1, limit = 20 } = params ?? {}
   const from = (page - 1) * limit
   const to   = from + limit - 1
 
@@ -224,14 +226,24 @@ export async function getMarketplaceFeedAction(params?: {
     `)
     .eq('status', 'available')
     .eq('is_deleted', false)
-    .order('created_at', { ascending: false })
     .range(from, to)
 
   if (category && category !== 'all') {
     query = query.eq('category', category as never)
   }
+  if (condition && condition !== 'all') {
+    query = query.eq('condition', condition as never)
+  }
   if (search) {
     query = query.ilike('title', `%${search}%`)
+  }
+
+  if (sort === 'price_asc') {
+    query = query.order('price', { ascending: true, nullsFirst: false })
+  } else if (sort === 'price_desc') {
+    query = query.order('price', { ascending: false, nullsFirst: false })
+  } else {
+    query = query.order('created_at', { ascending: false })
   }
 
   const { data, error } = await query

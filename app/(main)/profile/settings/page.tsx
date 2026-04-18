@@ -4,14 +4,14 @@ import { updateProfileAction } from '@/actions/auth.actions'
 import { ROUTES } from '@/lib/constants/routes'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types'
+import SubmitButton from '@/components/ui/SubmitButton'
+import { InputField, TextareaField } from '@/components/ui/Input'
 
 export const metadata: Metadata = { title: 'Pengaturan Profil' }
 
 export default async function ProfileSettingsPage() {
   const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect(ROUTES.LOGIN)
 
@@ -19,16 +19,16 @@ export default async function ProfileSettingsPage() {
   const profile = data as Profile | null
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-2">
         <a
           href={ROUTES.PROFILE}
-          className="inline-flex text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          className="inline-flex text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
         >
           ← Kembali ke Profil
         </a>
-        <h1 className="text-2xl font-bold text-white">Pengaturan Profil</h1>
-        <p className="text-slate-400 text-sm">Perbarui informasi profilmu agar pembeli lebih mudah mengenalmu.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Pengaturan Profil</h1>
+        <p className="text-gray-500 text-sm">Perbarui informasi profilmu agar pembeli lebih mudah mengenalmu.</p>
       </div>
 
       <form
@@ -39,94 +39,53 @@ export default async function ProfileSettingsPage() {
             redirect(ROUTES.PROFILE)
           }
         }}
-        className="space-y-5 bg-white/5 border border-white/10 rounded-2xl p-6"
+        className="space-y-5 bg-white border border-gray-200 rounded-2xl p-6"
       >
-        <div>
-          <label htmlFor="full_name" className="block text-slate-300 text-sm font-medium mb-1.5">
-            Nama Lengkap *
-          </label>
-          <input
-            id="full_name"
-            name="full_name"
-            required
-            defaultValue={profile?.full_name ?? ''}
-            className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors"
-          />
-        </div>
+        <InputField
+          id="full_name" name="full_name" required
+          label="Nama Lengkap"
+          defaultValue={profile?.full_name ?? ''}
+        />
 
-        <div>
-          <label htmlFor="campus_email" className="block text-slate-300 text-sm font-medium mb-1.5">
-            Email Kampus
-          </label>
-          <input
-            id="campus_email"
-            name="campus_email"
-            defaultValue={profile?.campus_email ?? user.email ?? ''}
-            disabled
-            readOnly
-            className="w-full bg-white/5 border border-white/10 text-slate-400 placeholder-slate-500 rounded-xl px-4 py-3 text-sm outline-none"
-          />
-        </div>
+        <InputField
+          id="campus_email" name="campus_email"
+          label="Email Kampus"
+          defaultValue={profile?.campus_email ?? user.email ?? ''}
+          disabled readOnly
+          hint="Email kampus tidak bisa diubah"
+        />
 
-        <div>
-          <label htmlFor="nim" className="block text-slate-300 text-sm font-medium mb-1.5">
-            NIM
-          </label>
-          <input
-            id="nim"
-            name="nim"
-            defaultValue={profile?.nim ?? ''}
-            placeholder="Contoh: 3123500010"
-            className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors"
-          />
-        </div>
+        <InputField
+          id="nim" name="nim"
+          label="NRP"
+          defaultValue={profile?.nim ?? ''}
+          placeholder="Contoh: 3123500010"
+        />
 
-        <div>
-          <label htmlFor="department" className="block text-slate-300 text-sm font-medium mb-1.5">
-            Departemen
-          </label>
-          <input
-            id="department"
-            name="department"
-            defaultValue={profile?.department ?? ''}
-            placeholder="Contoh: Teknik Informatika"
-            className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors"
-          />
-        </div>
+        <InputField
+          id="department" name="department"
+          label="Departemen"
+          defaultValue={profile?.department ?? ''}
+          placeholder="Contoh: Teknik Informatika"
+        />
 
-        <div>
-          <label htmlFor="bio" className="block text-slate-300 text-sm font-medium mb-1.5">
-            Bio
-          </label>
-          <textarea
-            id="bio"
-            name="bio"
-            rows={4}
-            defaultValue={profile?.bio ?? ''}
-            placeholder="Ceritakan singkat tentang dirimu atau barang yang biasa kamu jual..."
-            className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors resize-none"
-          />
-        </div>
+        <TextareaField
+          id="bio" name="bio" rows={4}
+          label="Bio"
+          defaultValue={profile?.bio ?? ''}
+          placeholder="Ceritakan singkat tentang dirimu atau barang yang biasa kamu jual..."
+        />
 
-        <div>
-          <label htmlFor="whatsapp_number" className="block text-slate-300 text-sm font-medium mb-1.5">
-            Nomor WhatsApp
-          </label>
-          <input
-            id="whatsapp_number"
-            name="whatsapp_number"
-            defaultValue={profile?.whatsapp_number ?? ''}
-            placeholder="Contoh: 081234567890"
-            className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors"
-          />
-        </div>
+        <InputField
+          id="whatsapp_number" name="whatsapp_number"
+          label="Nomor WhatsApp"
+          defaultValue={profile?.whatsapp_number ?? ''}
+          placeholder="Contoh: 081234567890"
+        />
 
-        <button
-          type="submit"
-          className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-base transition-all shadow-lg shadow-blue-600/25"
-        >
+        <SubmitButton fullWidth size="lg" pendingText="Menyimpan...">
           Simpan Perubahan
-        </button>
+        </SubmitButton>
       </form>
     </div>
   )
