@@ -1,12 +1,13 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   {
     href: '/',
-    label: 'Home',
+    label: 'Beranda',
     icon: (active: boolean) => (
       <svg className="w-6 h-6" fill={active ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 0 : 1.5} d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -27,8 +28,8 @@ const navItems = [
     label: 'Jual',
     isCenter: true,
     icon: (_active: boolean) => (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" />
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5v15m7.5-7.5h-15" />
       </svg>
     ),
   },
@@ -61,8 +62,8 @@ export default function BottomNav({ unreadCount = 0 }: BottomNavProps) {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden" aria-label="Navigasi utama">
-      <div className="flex items-center justify-around h-16 px-1 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 bg-[var(--surface)]/80 backdrop-blur-xl border border-[var(--border-light)] shadow-lg shadow-[var(--foreground)]/5 rounded-2xl md:hidden" aria-label="Navigasi utama">
+      <div className="flex items-center justify-around h-16 px-2 relative">
         {navItems.map((item) => {
           const isActive = item.href === '/'
             ? pathname === '/'
@@ -70,41 +71,51 @@ export default function BottomNav({ unreadCount = 0 }: BottomNavProps) {
 
           if (item.isCenter) {
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 aria-label={item.label}
-                className="flex items-center justify-center w-12 h-12 -mt-4 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 hover:bg-blue-700 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                className="flex items-center justify-center w-14 h-14 -mt-8 bg-gradient-to-br from-[var(--primary-light)] to-[var(--primary)] text-white rounded-full shadow-lg shadow-[var(--primary)]/30 hover:-translate-y-1 active:scale-95 transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] z-10 border-4 border-[var(--background)]"
               >
                 {item.icon(false)}
-              </a>
+              </Link>
             )
           }
 
           return (
-            <a
+            <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors relative focus-visible:outline-2 focus-visible:outline-blue-500 rounded-lg',
-                isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600',
+                'flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all duration-300 relative focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-xl group',
+                isActive ? 'text-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary-light)]',
               )}
             >
-              <span className="relative">
+              <span className="relative transition-transform duration-300 group-hover:-translate-y-0.5">
                 {item.icon(isActive)}
                 {'hasBadge' in item && item.hasBadge && unreadCount > 0 && (
                   <span
-                    className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 leading-none"
+                    className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--accent)] text-[var(--foreground)] text-[10px] font-extrabold rounded-full px-1.5 leading-none shadow-sm shadow-[var(--accent)]/40 animate-bounce"
                     aria-label={`${unreadCount} pesan belum dibaca`}
                   >
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
               </span>
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </a>
+              <span className={cn(
+                "text-[10px] font-bold transition-all duration-300",
+                isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'
+              )}>{item.label}</span>
+              
+              {/* Active Dot Indicator */}
+              {isActive && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[var(--primary)] rounded-full animate-fade-in-up"></span>
+              )}
+            </Link>
           )
         })}
       </div>

@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation'
 import { ROUTES } from '@/lib/constants/routes'
 import { getUnreadCountAction } from '@/actions/chat.actions'
 import BottomNav from '@/components/layout/BottomNav'
+import GSAPAnimations from '@/components/layout/GSAPAnimations'
+import NextTopLoader from 'nextjs-toploader'
+import Link from 'next/link'
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -14,42 +17,118 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   const unreadCount = unreadResult.success ? unreadResult.data ?? 0 : 0
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--background)]">
+      <NextTopLoader color="var(--primary)" height={3} showSpinner={false} shadow="0 0 10px var(--primary), 0 0 5px var(--primary)" />
+      <GSAPAnimations />
       <a href="#main-content" className="skip-link">Langsung ke konten</a>
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
-        <nav className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between" aria-label="Navigasi desktop">
-          <a href={ROUTES.HOME} className="flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-blue-500 rounded-lg" aria-label="Campus Pre-loved - Beranda">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center" aria-hidden="true">
-              <span className="text-white font-bold text-sm">CP</span>
+      
+      {/* Modern Glassmorphism Top Navigation */}
+      <header className="gsap-header sticky top-0 z-40 bg-[var(--surface)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-sm transition-all duration-300">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between" aria-label="Navigasi desktop">
+          {/* Logo */}
+          <Link href={ROUTES.HOME} className="flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-xl group transition-transform hover:scale-[1.02]" aria-label="Campus Pre-loved - Beranda">
+            <div className="w-10 h-10 bg-gradient-to-br from-[var(--primary-light)] to-[var(--primary)] rounded-xl flex items-center justify-center shadow-md shadow-[var(--primary)]/20" aria-hidden="true">
+              <span className="text-white font-black text-lg tracking-wider">CP</span>
             </div>
-            <span className="text-lg font-bold text-gray-900 hidden sm:block">
-              Campus <span className="text-blue-600">Pre-loved</span>
+            <span className="text-xl font-extrabold text-[var(--foreground)] hidden sm:block tracking-tight">
+              Campus <span className="text-[var(--primary)] group-hover:text-[var(--primary-dark)] transition-colors">Pre-loved</span>
             </span>
-          </a>
+          </Link>
 
-          <div className="hidden md:flex items-center gap-1">
-            <a href={ROUTES.HOME} className="px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-blue-500">Home</a>
-            <a href={ROUTES.PRODUCTS} className="px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-blue-500">Jelajahi</a>
-            <a href={ROUTES.PRODUCT_NEW} className="px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-blue-500">+ Jual</a>
-            <a href={ROUTES.CHATS} className="relative px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-blue-500">
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-2">
+            <Link href={ROUTES.HOME} prefetch={true} className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Beranda</Link>
+            <Link href={ROUTES.PRODUCTS} prefetch={true} className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Jelajahi</Link>
+            <Link href={ROUTES.CHATS} prefetch={true} className="relative px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">
               Chat
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 leading-none" aria-label={`${unreadCount} pesan belum dibaca`}>
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--accent)] text-[var(--foreground)] text-[10px] font-bold rounded-full px-1.5 leading-none shadow-sm shadow-[var(--accent)]/30 animate-pulse" aria-label={`${unreadCount} pesan belum dibaca`}>
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
-            </a>
-            <a href={ROUTES.PROFILE} className="px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-blue-500">Profil</a>
+            </Link>
+            <Link href={ROUTES.PROFILE} prefetch={true} className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Profil</Link>
+            
+            {/* Prominent CTA Button */}
+            <div className="w-px h-6 bg-[var(--border)] mx-2"></div>
+            <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="ml-1 px-5 py-2.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Jual Barang
+            </Link>
           </div>
         </nav>
       </header>
 
-      <main id="main-content" className="max-w-7xl mx-auto px-4 py-6 pb-safe" role="main">
+      <main id="main-content" className="gsap-main max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-safe" role="main">
         {children}
       </main>
 
-      <footer className="hidden md:block border-t border-gray-200 mt-12 py-6 text-center text-gray-400 text-sm bg-white">
-        &copy; {new Date().getFullYear()} Campus Pre-loved &middot; Politeknik Elektronika Negeri Surabaya
+      <footer className="gsap-footer hidden md:block border-t border-[var(--border)] mt-24 bg-gradient-to-b from-[var(--surface)] to-[var(--surface-hover)] pt-16 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            {/* Branding Column */}
+            <div className="gsap-footer-col col-span-1 md:col-span-2">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary-light)] to-[var(--primary)] rounded-2xl flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
+                  <span className="text-white font-black text-xl tracking-wider">CP</span>
+                </div>
+                <span className="text-2xl font-extrabold text-[var(--foreground)] tracking-tight">
+                  Campus <span className="text-[var(--primary)]">Pre-loved</span>
+                </span>
+              </div>
+              <p className="text-[var(--text-secondary)] text-sm max-w-md leading-relaxed">
+                Marketplace eksklusif mahasiswa Politeknik Elektronika Negeri Surabaya (PENS). Platform aman dan terpercaya untuk jual-beli dan barter kebutuhan kuliah di lingkungan kampus.
+              </p>
+            </div>
+            
+            {/* Quick Links */}
+            <div className="gsap-footer-col">
+              <h4 className="font-bold text-[var(--foreground)] mb-6 text-sm uppercase tracking-wider">Tautan Cepat</h4>
+              <ul className="space-y-4">
+                <li><Link href={ROUTES.PRODUCTS} prefetch={true} className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--primary)] hover:translate-x-1 transition-all inline-block">Jelajahi Produk</Link></li>
+                <li><Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--primary)] hover:translate-x-1 transition-all inline-block">Mulai Berjualan</Link></li>
+                <li><Link href={ROUTES.CHATS} prefetch={true} className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--primary)] hover:translate-x-1 transition-all inline-block">Pesan Masuk</Link></li>
+                <li><Link href={ROUTES.PROFILE} prefetch={true} className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--primary)] hover:translate-x-1 transition-all inline-block">Pengaturan Profil</Link></li>
+              </ul>
+            </div>
+            
+            {/* Safety & Trust */}
+            <div className="gsap-footer-col">
+              <h4 className="font-bold text-[var(--foreground)] mb-6 text-sm uppercase tracking-wider">Keamanan</h4>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <div className="mt-0.5 p-1 bg-[var(--success)]/10 rounded-md text-[var(--success)]">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                  </div>
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">Eksklusif Mahasiswa PENS</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="mt-0.5 p-1 bg-[var(--accent)]/15 rounded-md text-[var(--accent-dark)]">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">Rekomendasi Transaksi COD</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="mt-0.5 p-1 bg-[var(--primary)]/10 rounded-md text-[var(--primary)]">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
+                  </div>
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">Komunitas Terpercaya</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-[var(--border)] pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-[var(--text-muted)] text-sm font-medium">
+              &copy; {new Date().getFullYear()} Campus Pre-loved. Hak Cipta Dilindungi.
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[var(--text-secondary)] bg-white px-4 py-2 rounded-full border border-[var(--border)] shadow-sm">
+                Built with <span className="text-[var(--primary)] animate-pulse inline-block">💙</span> at PENS
+              </span>
+            </div>
+          </div>
+        </div>
       </footer>
 
       <BottomNav unreadCount={unreadCount} />

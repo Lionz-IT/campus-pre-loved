@@ -13,18 +13,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-sm shadow-blue-600/20',
-  secondary: 'bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800',
-  accent: 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white shadow-sm shadow-amber-500/20',
-  outline: 'bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 border border-gray-300',
-  ghost: 'bg-transparent hover:bg-gray-100 active:bg-gray-200 text-gray-600',
+  primary: 'bg-[var(--primary)] hover:bg-[var(--primary-light)] active:bg-[var(--primary-dark)] text-white shadow-[var(--shadow-glow)] hover:-translate-y-0.5',
+  secondary: 'bg-[var(--surface)] hover:bg-[var(--surface-hover)] active:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] shadow-[var(--shadow-subtle)] hover:-translate-y-0.5',
+  accent: 'bg-[var(--accent)] hover:bg-[var(--accent-light)] active:bg-[var(--accent-dark)] text-white shadow-sm shadow-amber-500/30 hover:-translate-y-0.5',
+  outline: 'bg-transparent hover:bg-[var(--surface-hover)] active:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)]',
+  ghost: 'bg-transparent hover:bg-[var(--surface-hover)] active:bg-[var(--border)] text-[var(--foreground)]',
   danger: 'bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 border border-red-200',
 }
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-xs rounded-lg',
-  md: 'px-4 py-2.5 text-sm rounded-xl',
-  lg: 'px-6 py-3.5 text-base rounded-xl',
+  sm: 'px-4 py-2 text-xs rounded-xl font-medium',
+  md: 'px-5 py-2.5 text-sm rounded-2xl font-semibold',
+  lg: 'px-7 py-3.5 text-base rounded-2xl font-bold',
 }
 
 export default function Button({
@@ -40,7 +40,7 @@ export default function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center font-semibold transition-all duration-150 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
+        'relative overflow-hidden inline-flex items-center justify-center transition-all duration-300 ease-out active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:translate-y-0 disabled:shadow-none',
         variantClasses[variant],
         sizeClasses[size],
         fullWidth && 'w-full',
@@ -49,15 +49,15 @@ export default function Button({
       disabled={disabled || loading}
       {...props}
     >
-      {loading ? (
-        <>
-          <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          Memproses...
-        </>
-      ) : children}
+      {loading && (
+        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      )}
+      <span className={cn('relative z-10 flex items-center justify-center gap-2', loading && 'opacity-80')}>
+        {children}
+      </span>
     </button>
   )
 }
