@@ -28,9 +28,15 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
 
   const imageFiles = formData.getAll('images') as File[]
   const imageUrls: string[] = []
+  
+  const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
   for (const file of imageFiles.slice(0, 5)) {
     if (file.size === 0) continue
+    if (file.size > MAX_FILE_SIZE) return { success: false, error: `File ${file.name} terlalu besar (maksimal 5MB)` }
+    if (!ALLOWED_TYPES.includes(file.type)) return { success: false, error: `Format file ${file.name} tidak didukung` }
+
     const filePath = generateStorageFileName(user.id, file.name)
     const { error: uploadError } = await supabase.storage
       .from('product-images')
@@ -203,6 +209,10 @@ export async function markAsSoldAction(
 }
 
 
+import type { Database } from '@/types/database.types'
+
+type ProductCategory = Database['public']['Enums']['product_category']
+
 export async function getMarketplaceFeedAction(params?: {
   category?:  string
   search?:    string
@@ -229,10 +239,10 @@ export async function getMarketplaceFeedAction(params?: {
     .range(from, to)
 
   if (category && category !== 'all') {
-    query = query.eq('category', category as never)
+    query = query.eq('category', category as ProductCategory)
   }
   if (condition && condition !== 'all') {
-    query = query.eq('condition', condition as never)
+    query = query.eq('condition', condition)
   }
   if (search) {
     query = query.ilike('title', `%${search}%`)

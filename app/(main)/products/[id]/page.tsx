@@ -1,5 +1,5 @@
+import { cache, Suspense } from 'react'
 import type { Metadata } from 'next'
-import dynamic from 'next/dynamic'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createChatRoomAction } from '@/actions/chat.actions'
@@ -9,7 +9,6 @@ import { getProductReviewsAction, checkCanReviewAction } from '@/actions/review.
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import { PRODUCT_CONDITIONS, PRODUCT_STATUS_LABELS } from '@/lib/constants/pens'
 import { ROUTES } from '@/lib/constants/routes'
-import type { ProductWithSeller } from '@/types'
 import Badge from '@/components/ui/Badge'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
@@ -19,58 +18,145 @@ import ShareButton from '@/components/ui/ShareButton'
 import WishlistButton from '@/components/ui/WishlistButton'
 import ReviewList from '@/components/product/ReviewList'
 import ReviewForm from '@/components/product/ReviewForm'
+import ImageCarousel from '@/components/ui/ImageCarousel'
 
-const ImageCarousel = dynamic(() => import('@/components/ui/ImageCarousel'), {
-  loading: () => <div className="aspect-square bg-gray-100 rounded-2xl skeleton-shimmer" />,
+// 1. DEDUPLICATE QUERY: Cache database call to reuse between Metadata and Component
+const getProduct = cache(async (id: string) => {
+  const supabase = await createSupabaseServerClient()
+  return supabase
+    .from('products')
+    .select(`*, seller:profiles!products_seller_id_fkey (id, full_name, avatar_url, rating, whatsapp_number, nim, department)`)
+    .eq('id', id)
+    .eq('is_deleted', false)
+    .single()
 })
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
-  const { data } = await supabase.from('products').select('title, description').eq('id', id).single()
+  const { data } = await getProduct(id)
   return {
     title:       data?.title ?? 'Detail Produk',
     description: data?.description ?? 'Lihat detail produk di Campus Pre-loved PENS.',
   }
 }
 
+// 2. ISOLATE WISHLIST QUERY
+async function WishlistToggle({ productId }: { productId: string }) {
+  const wishlistResult = await checkWishlistAction(productId)
+  const isWishlisted = wishlistResult.success && wishlistResult.data ? wishlistResult.data.wishlisted : false
+  return <WishlistButton productId={productId} initialWishlisted={isWishlisted} size="sm" />
+}
+
+// 3. ISOLATE REVIEWS AND ACTIONS (WATERFALL FIX)
+async function ProductInteractions({ product, user }: { product: any, user: any }) {
+  const supabase = await createSupabaseServerClient()
+  const isLoggedIn = !!user
+  const isSeller   = user?.id === product.seller_id
+  const isBooker   = user?.id === product.booked_by
+
+  let chatPromise: Promise<any> = Promise.resolve({ data: null })
+  
+  if (isLoggedIn) {
+    if (!isSeller) {
+      chatPromise = supabase.from('chats').select('id').eq('product_id', product.id).eq('buyer_id', user.id).maybeSingle() as any
+    } else if (product.status === 'booked' && product.booked_by) {
+      chatPromise = supabase.from('chats').select('id').eq('product_id', product.id).eq('buyer_id', product.booked_by).maybeSingle() as any
+    }
+  }
+
+  const [chatResult, reviewsResult, canReviewResult] = await Promise.all([
+    chatPromise,
+    getProductReviewsAction(product.id),
+    checkCanReviewAction(product.id, product.seller_id),
+  ])
+
+  const existingChatId = chatResult.data?.id ?? null
+  const reviews = reviewsResult.success && reviewsResult.data ? reviewsResult.data : []
+  const canReview = canReviewResult.success && canReviewResult.data ? canReviewResult.data.canReview : false
+
+  return (
+    <>
+      <div className="mt-4">
+        {!isSeller && isLoggedIn && product.status === 'available' && (
+          <div className="flex gap-3">
+            <form action={async () => {
+              'use server'
+              const result = await createChatRoomAction(product.id, product.seller_id)
+              if (result.success) {
+                const { redirect } = await import('next/navigation')
+                redirect(ROUTES.CHAT_ROOM(result.data!.chatId))
+              }
+            }} className="flex-1">
+              <SubmitButton fullWidth size="lg" pendingText="Membuka chat...">
+                Chat &amp; Tawar
+              </SubmitButton>
+            </form>
+          </div>
+        )}
+
+        {isSeller && (
+          <div className="flex gap-3">
+            <a href={ROUTES.PRODUCT_EDIT(product.id)} className="flex-1">
+              <Button variant="outline" fullWidth size="lg">
+                Edit Produk
+              </Button>
+            </a>
+            {product.status === 'booked' && existingChatId && (
+              <form action={async () => {
+                'use server'
+                await markAsSoldAction(product.id, existingChatId!)
+              }}>
+                <SubmitButton variant="accent" size="lg" pendingText="Memproses...">
+                  Tandai Terjual
+                </SubmitButton>
+              </form>
+            )}
+          </div>
+        )}
+
+        {isBooker && existingChatId && (
+          <form action={async () => {
+            'use server'
+            await cancelBookingAction(product.id, existingChatId!)
+          }}>
+            <SubmitButton variant="danger" fullWidth size="lg" pendingText="Membatalkan...">
+              Batalkan Booking
+            </SubmitButton>
+          </form>
+        )}
+      </div>
+
+      <div className="mt-10 animate-fade-in-up stagger-3">
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Review Pembeli</h2>
+          <ReviewList reviews={reviews} />
+          {canReview && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Tulis Review</h3>
+              <ReviewForm productId={product.id} sellerId={product.seller_id} />
+            </div>
+          )}
+        </Card>
+      </div>
+    </>
+  )
+}
+
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createSupabaseServerClient()
 
+  // Only block the initial render for the core product and user authentication!
   const [{ data: product, error }, { data: { user } }] = await Promise.all([
-    supabase
-      .from('products')
-      .select(`*, seller:profiles!products_seller_id_fkey (id, full_name, avatar_url, rating, whatsapp_number, nim, department)`)
-      .eq('id', id)
-      .eq('is_deleted', false)
-      .single(),
+    getProduct(id),
     supabase.auth.getUser(),
   ])
 
   if (error || !product) notFound()
 
-  const isSeller   = user?.id === product.seller_id
-  const isBooker   = user?.id === product.booked_by
   const isLoggedIn = !!user
-
   const conditionLabel = PRODUCT_CONDITIONS.find((c) => c.value === product.condition)
   const statusInfo     = PRODUCT_STATUS_LABELS[product.status]
-
-  const [chatResult, wishlistResult, reviewsResult, canReviewResult] = await Promise.all([
-    user && !isSeller
-      ? supabase.from('chats').select('id').eq('product_id', id).eq('buyer_id', user.id).maybeSingle()
-      : Promise.resolve({ data: null }),
-    checkWishlistAction(id),
-    getProductReviewsAction(id),
-    checkCanReviewAction(id, product.seller_id),
-  ])
-
-  const existingChatId = chatResult.data?.id ?? null
-  const isWishlisted = wishlistResult.success && wishlistResult.data ? wishlistResult.data.wishlisted : false
-  const reviews = reviewsResult.success && reviewsResult.data ? reviewsResult.data : []
-  const canReview = canReviewResult.success && canReviewResult.data ? canReviewResult.data.canReview : false
-
   const statusBadgeVariant = product.status === 'available' ? 'green' as const : product.status === 'booked' ? 'yellow' as const : 'gray' as const
 
   return (
@@ -89,7 +175,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              {isLoggedIn && <WishlistButton productId={product.id} initialWishlisted={isWishlisted} size="sm" />}
+              {isLoggedIn && (
+                <Suspense fallback={<div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse" />}>
+                  <WishlistToggle productId={product.id} />
+                </Suspense>
+              )}
               <ShareButton url={ROUTES.PRODUCT_DETAIL(product.id)} title={product.title} />
             </div>
           </div>
@@ -131,70 +221,19 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </a>
             </div>
           </Card>
-
-          {!isSeller && isLoggedIn && product.status === 'available' && (
-          <div className="flex gap-3">
-              <form action={async () => {
-                'use server'
-                const result = await createChatRoomAction(product.id, product.seller_id)
-                if (result.success) {
-                  const { redirect } = await import('next/navigation')
-                  redirect(ROUTES.CHAT_ROOM(result.data!.chatId))
-                }
-              }} className="flex-1">
-                <SubmitButton fullWidth size="lg" pendingText="Membuka chat...">
-                  Chat &amp; Tawar
-                </SubmitButton>
-              </form>
-            </div>
-          )}
-
-          {isSeller && (
-            <div className="flex gap-3">
-              <a href={ROUTES.PRODUCT_EDIT(product.id)} className="flex-1">
-                <Button variant="outline" fullWidth size="lg">
-                  Edit Produk
-                </Button>
-              </a>
-              {product.status === 'booked' && existingChatId && (
-                <form action={async () => {
-                  'use server'
-                  await markAsSoldAction(product.id, existingChatId!)
-                }}>
-                  <SubmitButton variant="accent" size="lg" pendingText="Memproses...">
-                    Tandai Terjual
-                  </SubmitButton>
-                </form>
-              )}
-            </div>
-          )}
-
-          {isBooker && existingChatId && (
-            <form action={async () => {
-              'use server'
-              await cancelBookingAction(product.id, existingChatId!)
-            }}>
-              <SubmitButton variant="danger" fullWidth size="lg" pendingText="Membatalkan...">
-                Batalkan Booking
-              </SubmitButton>
-            </form>
-          )}
-
+          
           <p className="text-gray-400 text-xs">Diposting {formatRelativeTime(product.created_at)}</p>
-        </div>
-      </div>
 
-      <div className="mt-10 animate-fade-in-up stagger-3">
-        <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Review Pembeli</h2>
-          <ReviewList reviews={reviews} />
-          {canReview && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Tulis Review</h3>
-              <ReviewForm productId={product.id} sellerId={product.seller_id} />
+          <Suspense fallback={
+            <div className="space-y-4">
+              <div className="h-12 bg-gray-100 rounded-lg animate-pulse w-full mt-4" />
+              <div className="h-40 bg-gray-100 rounded-2xl animate-pulse w-full mt-10" />
             </div>
-          )}
-        </Card>
+          }>
+            <ProductInteractions product={product} user={user} />
+          </Suspense>
+
+        </div>
       </div>
     </div>
   )

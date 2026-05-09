@@ -20,7 +20,6 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen bg-[var(--background)]">
       <NextTopLoader color="var(--primary)" height={3} showSpinner={false} shadow="0 0 10px var(--primary), 0 0 5px var(--primary)" />
       <GSAPAnimations />
-      <a href="#main-content" className="skip-link">Langsung ke konten</a>
       
       {/* Modern Glassmorphism Top Navigation */}
       <header className="gsap-header sticky top-0 z-40 bg-[var(--surface)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-sm transition-all duration-300">

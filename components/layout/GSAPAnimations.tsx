@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -10,6 +10,8 @@ if (typeof window !== 'undefined') {
 }
 
 export default function GSAPAnimations() {
+  const pathname = usePathname()
+
   useGSAP(() => {
     // Header animation
     gsap.from('.gsap-header', {
@@ -17,6 +19,7 @@ export default function GSAPAnimations() {
       opacity: 0,
       duration: 0.8,
       ease: 'power3.out',
+      clearProps: 'all'
     })
 
     // Main content animation
@@ -26,6 +29,7 @@ export default function GSAPAnimations() {
       duration: 0.8,
       delay: 0.2,
       ease: 'power3.out',
+      clearProps: 'all'
     })
 
     // Footer animation
@@ -54,7 +58,7 @@ export default function GSAPAnimations() {
       stagger: 0.1,
       ease: 'power2.out',
     })
-  })
+  }, { dependencies: [pathname] })
 
   return null
 }
