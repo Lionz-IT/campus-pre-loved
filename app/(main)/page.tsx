@@ -21,31 +21,31 @@ export default async function HomePage({
   const products = result.success ? result.data ?? [] : []
 
   return (
-    <div className="space-y-8">
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 rounded-3xl p-8 md:p-12 text-white animate-fade-in-up">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/30 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-4">
-            <span className="w-2 h-2 bg-amber-400 rounded-full" />
+    <div className="space-y-10">
+      <section className="relative overflow-hidden bg-[var(--surface-hover)] border border-[var(--border)] rounded-[2rem] p-8 md:p-14 animate-fade-in-up">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[var(--accent)]/5 rounded-full translate-y-1/3 -translate-x-1/3 blur-3xl" />
+        <div className="relative z-10 max-w-2xl">
+          <div className="inline-flex items-center gap-2 bg-white border border-[var(--border)] rounded-full px-5 py-2 text-xs font-bold mb-6 shadow-sm text-[var(--primary-dark)]">
+            <span className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full animate-pulse" />
             Eksklusif Mahasiswa PENS
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-3">
-            Marketplace Mahasiswa PENS
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-5 tracking-tight text-[var(--foreground)]">
+            Marketplace<br/><span className="text-[var(--primary)]">Mahasiswa PENS</span>
           </h1>
-          <p className="text-blue-100 text-base md:text-lg mb-6 leading-relaxed">
+          <p className="text-[var(--text-secondary)] text-lg md:text-xl mb-8 leading-relaxed max-w-xl font-medium">
             Jual, beli, dan barter kebutuhan kuliah — mulai dari mikrokontroler sampai buku modul. COD aman di area kampus.
           </p>
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-4 flex-wrap">
             <a
               href="/products/new"
-              className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-all hover:scale-105 shadow-lg shadow-amber-500/30 text-sm"
+              className="px-8 py-4 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-xl font-bold transition-colors text-base"
             >
               + Mulai Jual
             </a>
             <a
               href="/products"
-              className="px-6 py-3 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white rounded-xl font-semibold transition-all border border-white/20 text-sm"
+              className="px-8 py-4 bg-white hover:bg-[var(--surface-hover)] text-[var(--text-primary)] rounded-xl font-bold transition-colors border border-[var(--border)] text-base"
             >
               Jelajahi Semua
             </a>
@@ -53,12 +53,12 @@ export default async function HomePage({
         </div>
       </section>
 
-      <section>
-        <div className="flex gap-2 flex-wrap">
+      <section className="animate-fade-in-up stagger-2">
+        <div className="flex gap-3 flex-wrap">
           <a
             href="/"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              !category ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-colors duration-200 ${
+              !category ? 'bg-[var(--foreground)] text-white' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--primary)] hover:text-[var(--primary)]'
             }`}
           >
             Semua
@@ -67,13 +67,13 @@ export default async function HomePage({
             <a
               key={cat.value}
               href={`/?category=${cat.value}`}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-colors duration-200 flex items-center gap-2 ${
                 category === cat.value
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-[var(--foreground)] text-white'
+                  : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--primary)] hover:text-[var(--primary)]'
               }`}
             >
-              <CategoryIcon name={cat.icon} className="w-4 h-4 inline-block -mt-0.5" /> {cat.label}
+              <CategoryIcon name={cat.icon} className="w-4 h-4" /> {cat.label}
             </a>
           ))}
         </div>
@@ -90,7 +90,7 @@ export default async function HomePage({
             title="Belum ada produk di kategori ini"
             description="Jadilah yang pertama berjualan!"
             action={
-              <a href="/products/new" className="inline-flex px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-colors">
+              <a href="/products/new" className="inline-flex px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-xl font-bold text-sm transition-colors">
                 + Mulai Jual
               </a>
             }

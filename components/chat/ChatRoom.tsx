@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useChat } from '@/hooks/useChat'
 import { sendOfferAction, acceptOfferAction, rejectOfferAction } from '@/actions/chat.actions'
 import { formatPrice, formatRelativeTime, getInitials } from '@/lib/utils'
-import type { MessageWithSender, Product, OfferPayload, OfferAcceptPayload } from '@/types'
+import type { MessageWithSender, Product, OfferPayload, OfferAcceptPayload, OfferRejectPayload } from '@/types'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import { InputField, TextareaField } from '@/components/ui/Input'
@@ -35,8 +35,16 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
 
   const handleSendOffer = async () => {
     setIsSubmitting(true)
+
+    const offeredPriceNumber = Number(offerPrice)
+    if (!Number.isFinite(offeredPriceNumber) || offeredPriceNumber <= 0) {
+      toast.error('Harga tawar tidak valid')
+      setIsSubmitting(false)
+      return
+    }
+
     const result = await sendOfferAction(chatId, {
-      offered_price:  Number(offerPrice),
+      offered_price:  offeredPriceNumber,
       original_price: product.price ?? undefined,
       note:           offerNote || undefined,
     })
@@ -99,7 +107,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
         onClose={() => setShowOfferModal(false)}
         title="Ajukan Penawaran"
       >
-        {product.price && (
+        {product.price != null && (
           <p className="text-gray-500 text-sm">Harga asli: <span className="text-gray-900 font-semibold">{formatPrice(product.price)}</span></p>
         )}
         <InputField
@@ -159,7 +167,8 @@ function MessageBubble({ message, isOwn, isSeller, chatId }: {
   }
 
   if (message.message_type === 'offer' || message.message_type === 'offer_accept' || message.message_type === 'offer_reject') {
-    const payload = message.payload as OfferPayload & OfferAcceptPayload & { counter_offer?: number; reason?: string }
+    const payload = message.payload as Partial<OfferPayload & OfferAcceptPayload & OfferRejectPayload> | null
+    const hasPayload = Boolean(payload)
     return (
       <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
         <div className={`max-w-xs rounded-2xl p-4 border space-y-2 ${
@@ -172,24 +181,26 @@ function MessageBubble({ message, isOwn, isSeller, chatId }: {
              : message.message_type === 'offer_accept' ? 'Tawaran Diterima'
              : 'Tawaran Ditolak'}
           </p>
-          {payload.offered_price  && <p className="text-gray-900 font-bold">{formatPrice(payload.offered_price)}</p>}
-          {payload.agreed_price   && <p className="text-gray-900 font-bold">{formatPrice(payload.agreed_price)}</p>}
-          {payload.counter_offer  && <p className="text-gray-600 text-sm">Counter: {formatPrice(payload.counter_offer)}</p>}
-          {payload.meet_point && (
+          {payload?.offered_price != null && <p className="text-gray-900 font-bold">{formatPrice(payload.offered_price)}</p>}
+          {payload?.agreed_price  != null && <p className="text-gray-900 font-bold">{formatPrice(payload.agreed_price)}</p>}
+          {payload?.counter_offer != null && <p className="text-gray-600 text-sm">Counter: {formatPrice(payload.counter_offer)}</p>}
+          {payload?.meet_point && (
             <p className="text-gray-500 text-xs">{payload.meet_point} · {payload.meet_time}</p>
           )}
-          {(payload.note || payload.reason) && (
-            <p className="text-gray-400 text-xs italic">"{payload.note ?? payload.reason}"</p>
+          {(payload?.note || payload?.reason) && (
+            <p className="text-gray-400 text-xs italic">"{payload?.note ?? payload?.reason}"</p>
           )}
 
-          {message.message_type === 'offer' && isSeller && !isOwn && (
+          {!hasPayload ? (
+            <p className="text-gray-500 text-xs">Data penawaran tidak tersedia.</p>
+          ) : message.message_type === 'offer' && isSeller && !isOwn ? (
             <div className="flex gap-2 pt-1">
               <button
-                disabled={isActing}
+                disabled={isActing || payload?.offered_price == null}
                 onClick={async () => {
                   setIsActing(true)
                   await acceptOfferAction(chatId, {
-                    agreed_price: payload.offered_price,
+                    agreed_price: payload?.offered_price ?? 0,
                     meet_point:   'Kantin Teknik PENS',
                     meet_time:    'Atur lewat chat',
                   })
@@ -211,7 +222,7 @@ function MessageBubble({ message, isOwn, isSeller, chatId }: {
                 Tolak
               </button>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     )
