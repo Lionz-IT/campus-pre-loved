@@ -2,9 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { sendMessageAction } from '@/actions/chat.actions'
+import { sendMessageAction, markMessagesReadAction } from '@/actions/chat.actions'
 import type { MessageWithSender } from '@/types'
-
 
 export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
   const [messages, setMessages]   = useState<MessageWithSender[]>(initialMessages)
@@ -12,6 +11,10 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
   const [error, setError]         = useState<string | null>(null)
   const bottomRef                 = useRef<HTMLDivElement>(null)
 
+  // Tandai pesan sudah dibaca saat komponen di-mount
+  useEffect(() => {
+    markMessagesReadAction(chatId).catch(console.error)
+  }, [chatId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
