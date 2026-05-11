@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 
 export const metadata: Metadata = {
   title: 'Masuk Akun',
@@ -6,14 +7,14 @@ export const metadata: Metadata = {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-amber-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-600/20">
-            <span className="text-white font-bold text-xl">CP</span>
+          <div className="relative w-24 h-24 mx-auto mb-4">
+            <Image src="/logo.png" alt="Campus Pre-loved Logo" fill sizes="96px" className="object-contain" priority />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-            Campus <span className="text-blue-600">Pre-loved</span>
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            <span className="text-black">Campus</span> <span className="text-[var(--primary)]">Pre-loved</span>
           </h1>
           <p className="text-gray-500 mt-2 text-sm">
             Marketplace eksklusif mahasiswa PENS

@@ -30,8 +30,8 @@ export default async function MainLayout({ children }: { children: React.ReactNo
             <div className="relative w-14 h-14" aria-hidden="true">
               <Image src="/logo.png" alt="Campus Pre-loved Logo" fill sizes="56px" className="object-contain" priority />
             </div>
-            <span className="text-2xl font-extrabold text-[var(--primary)] hidden sm:block tracking-tight">
-              Campus Pre-loved
+            <span className="text-2xl font-extrabold hidden sm:block tracking-tight">
+              <span className="text-black">Campus</span> <span className="text-[var(--primary)]">Pre-loved</span>
             </span>
           </Link>
 
@@ -77,8 +77,8 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 <div className="relative w-16 h-16">
                   <Image src="/logo.png" alt="Campus Pre-loved Logo" fill sizes="64px" className="object-contain" />
                 </div>
-                <span className="text-2xl font-extrabold text-[var(--foreground)] tracking-tight">
-                  Campus <span className="text-[var(--primary)]">Pre-loved</span>
+                <span className="text-2xl font-extrabold tracking-tight">
+                  <span className="text-black">Campus</span> <span className="text-[var(--primary)]">Pre-loved</span>
                 </span>
               </div>
               <p className="text-[var(--text-secondary)] text-sm max-w-md leading-relaxed">
