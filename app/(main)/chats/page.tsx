@@ -6,6 +6,7 @@ import { getMyChatsAction } from '@/actions/chat.actions'
 import { formatRelativeTime } from '@/lib/utils'
 import { ROUTES } from '@/lib/constants/routes'
 import EmptyState from '@/components/ui/EmptyState'
+import ChatListRealtime from '@/components/chat/ChatListRealtime'
 
 export const metadata: Metadata = { title: 'Pesan & Chat' }
 
@@ -19,6 +20,7 @@ export default async function ChatsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
+      <ChatListRealtime />
       <h1 className="text-2xl font-bold text-gray-900">Pesan</h1>
 
       {chats.length === 0 ? (
