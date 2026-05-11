@@ -80,7 +80,6 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
             imageUrl={product.image_urls[0]}
             sellerName={product.seller.full_name}
             timeAgo={formatRelativeTime(product.created_at)}
-            formatPrice={formatPrice}
           />
         ))}
       </div>
