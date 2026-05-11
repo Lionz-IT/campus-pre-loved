@@ -76,6 +76,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
         currentUserId={user.id}
         isSeller={isSeller}
         product={chat.product}
+        otherPerson={isSeller ? chat.buyer : chat.seller}
       />
     </div>
   )
