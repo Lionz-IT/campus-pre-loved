@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'vpeixvydzffkcdvysngq.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'lznbwpxvakjhyjbfvfqk.supabase.co',
+      },
     ],
   },
 }
