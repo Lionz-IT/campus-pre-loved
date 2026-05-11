@@ -25,30 +25,39 @@ export default async function HomePage({
       <section className="relative overflow-hidden bg-[var(--surface-hover)] border border-[var(--border)] rounded-[2rem] p-8 md:p-14 animate-fade-in-up">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-[var(--accent)]/5 rounded-full translate-y-1/3 -translate-x-1/3 blur-3xl" />
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 bg-white border border-[var(--border)] rounded-full px-5 py-2 text-xs font-bold mb-6 shadow-sm text-[var(--primary-dark)]">
-            <span className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full animate-pulse" />
-            Eksklusif Mahasiswa PENS
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+          <div className="max-w-2xl flex-1">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-5 tracking-tight text-[var(--primary-dark)]">
+              Selamat Datang di Campus Pre-loved
+            </h1>
+            <div className="flex items-center gap-3 mb-8 flex-wrap">
+              <p className="text-[var(--text-secondary)] text-lg md:text-xl leading-relaxed font-medium">
+                Hemat & Terpercaya di Kampus!
+              </p>
+              <span className="bg-amber-400 text-amber-950 font-bold px-3 py-1 rounded-md text-sm rotate-[-2deg]">
+                #CampusLife
+              </span>
+            </div>
+            <div className="flex gap-4 flex-wrap">
+              <a
+                href="/products"
+                className="px-8 py-4 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-xl font-bold transition-colors text-base"
+              >
+                Mulai Belanja
+              </a>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-5 tracking-tight text-[var(--foreground)]">
-            Marketplace<br/><span className="text-[var(--primary)]">Mahasiswa PENS</span>
-          </h1>
-          <p className="text-[var(--text-secondary)] text-lg md:text-xl mb-8 leading-relaxed max-w-xl font-medium">
-            Jual, beli, dan barter kebutuhan kuliah — mulai dari mikrokontroler sampai buku modul. COD aman di area kampus.
-          </p>
-          <div className="flex gap-4 flex-wrap">
-            <a
-              href="/products/new"
-              className="px-8 py-4 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-xl font-bold transition-colors text-base"
-            >
-              + Mulai Jual
-            </a>
-            <a
-              href="/products"
-              className="px-8 py-4 bg-white hover:bg-[var(--surface-hover)] text-[var(--text-primary)] rounded-xl font-bold transition-colors border border-[var(--border)] text-base"
-            >
-              Jelajahi Semua
-            </a>
+          <div className="flex-1 w-full md:w-auto flex justify-center md:justify-end">
+            <div className="bg-white p-4 pb-10 shadow-xl rounded-sm rotate-3 hover:rotate-6 transition-transform duration-300">
+              <div className="relative w-full max-w-sm aspect-[4/3] bg-gray-100 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src="https://picsum.photos/seed/books/600/400" 
+                  alt="Books Polaroid" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -80,6 +89,12 @@ export default async function HomePage({
       </section>
 
       <section>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-[var(--primary)]">Penawaran Terbaru</h2>
+          <a href="/products" className="text-sm font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)] transition-colors">
+            Lihat Semua &rarr;
+          </a>
+        </div>
         {products.length === 0 ? (
           <EmptyState
             icon={

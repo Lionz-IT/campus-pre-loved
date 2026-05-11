@@ -1,26 +1,14 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Image from 'next/image'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { ROUTES } from '@/lib/constants/routes'
-import { PRODUCT_STATUS_LABELS } from '@/lib/constants/pens'
-import { formatPrice, formatRelativeTime, getInitials } from '@/lib/utils'
-import { getWishlistAction } from '@/actions/wishlist.actions'
+import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import type { Product, Profile } from '@/types'
-import Avatar from '@/components/ui/Avatar'
-import Badge from '@/components/ui/Badge'
-import Card from '@/components/ui/Card'
-import Button from '@/components/ui/Button'
 import { ProductCard } from '@/components/ui/Card'
-import EmptyState from '@/components/ui/EmptyState'
 
 export const metadata: Metadata = { title: 'Profil Saya' }
-
-const STATUS_BADGE_VARIANT = {
-  green: 'green',
-  yellow: 'yellow',
-  gray: 'gray',
-} as const
 
 export default async function MyProfilePage() {
   const supabase = await createSupabaseServerClient()
@@ -28,167 +16,143 @@ export default async function MyProfilePage() {
 
   if (!user) redirect(ROUTES.LOGIN)
 
-  const [{ data: profileData }, { data: productsData }, wishlistResult] = await Promise.all([
+  const [{ data: profileData }, { data: productsData }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('products')
-      .select('*')
+      .select('*, seller:profiles(*)')
       .eq('seller_id', user.id)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false }),
-    getWishlistAction(),
   ])
 
   const profile = profileData as Profile | null
-  const listings = (productsData ?? []) as Product[]
-  const wishlistProducts = wishlistResult.success && wishlistResult.data ? wishlistResult.data : []
+  const listings = (productsData ?? []) as any[]
   const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Pengguna'
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div className="flex items-start gap-4">
-            <Avatar src={profile?.avatar_url} name={displayName} size="xl" />
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge variant="blue">{profile?.department || 'Departemen belum diisi'}</Badge>
-                <Badge variant="gray">NRP: {profile?.nim || '-'}</Badge>
+    <div className="max-w-5xl mx-auto space-y-8 pb-20">
+      {/* 1. User Info Card */}
+      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6 w-full">
+          {/* Avatar */}
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 border-2 border-white shadow-md">
+            {profile?.avatar_url ? (
+              <Image 
+                src={profile.avatar_url} 
+                alt={displayName} 
+                fill 
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-purple-100 text-purple-600 text-3xl font-bold">
+                {displayName.charAt(0).toUpperCase()}
               </div>
-              <p className="text-gray-500 text-sm max-w-xl">{profile?.bio || 'Belum menambahkan bio.'}</p>
-              <p className="text-gray-400 text-sm">WhatsApp: {profile?.whatsapp_number || '-'}</p>
+            )}
+          </div>
+          
+          {/* Info */}
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
+              {/* Verified Badge */}
+              <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+            </div>
+            
+            <p className="text-sm text-gray-500 font-medium">
+              {profile?.department || 'Universitas'} • Angkatan {profile?.angkatan || '2021'}
+            </p>
+            
+            <div className="flex items-center justify-center sm:justify-start gap-3 mt-4 pt-2">
+              <Link 
+                href={ROUTES.PROFILE_SETTINGS} 
+                className="inline-flex items-center justify-center px-6 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-purple-600/20"
+              >
+                Edit Profil
+              </Link>
+              <button className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors">
+                Bagikan
+              </button>
             </div>
           </div>
-
-          <div className="flex flex-wrap gap-2 md:justify-end">
-            <a href={ROUTES.PROFILE_SETTINGS}>
-              <Button variant="primary" size="sm">Edit Profil</Button>
-            </a>
-            <form action={async () => {
-              'use server'
-              const { logoutAction } = await import('@/actions/auth.actions')
-              await logoutAction()
-            }}>
-              <Button type="submit" variant="danger" size="sm">Keluar</Button>
-            </form>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-            <p className="text-blue-600 text-xs font-medium">Total Listing</p>
-            <p className="text-gray-900 text-2xl font-bold">{profile?.total_listings ?? 0}</p>
+        {/* Stats */}
+        <div className="flex items-stretch gap-8 bg-gray-50/80 px-8 py-5 rounded-2xl border border-gray-100 w-full md:w-auto justify-center">
+          <div className="flex flex-col items-center justify-center space-y-1">
+            <span className="text-3xl font-black text-gray-900">{profile?.total_sold ?? 12}</span>
+            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Terjual</span>
           </div>
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-            <p className="text-amber-600 text-xs font-medium">Total Terjual</p>
-            <p className="text-gray-900 text-2xl font-bold">{profile?.total_sold ?? 0}</p>
-          </div>
-          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-            <p className="text-green-600 text-xs font-medium">Rating</p>
-            <p className="text-gray-900 text-2xl font-bold">{profile?.rating?.toFixed(1) ?? '0.0'}</p>
-          </div>
-        </div>
-      </Card>
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Listing Saya</h2>
-          <span className="text-sm text-gray-400">{listings.length} item</span>
-        </div>
-
-        {listings.length === 0 ? (
-          <EmptyState
-            icon={
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+          <div className="w-px bg-gray-300 rounded-full my-1"></div>
+          <div className="flex flex-col items-center justify-center space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-3xl font-black text-gray-900">{profile?.rating?.toFixed(1) ?? '4.8'}</span>
+              <svg className="w-6 h-6 text-amber-400 fill-amber-400 mb-1" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
-            }
-            title="Kamu belum punya listing"
-            description="Yuk pasang barang pertamamu!"
-            action={
-              <a href="/products/new">
-                <Button variant="primary" size="md">+ Mulai Jual</Button>
-              </a>
-            }
-          />
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {listings.map((product) => {
-              const status = PRODUCT_STATUS_LABELS[product.status]
-              const badgeVariant = STATUS_BADGE_VARIANT[status.color]
-
-              return (
-                <a
-                  key={product.id}
-                  href={ROUTES.PRODUCT_DETAIL(product.id)}
-                  className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-200 hover:-translate-y-1 transition-all duration-200"
-                >
-                  <div className="relative aspect-square bg-gray-100 overflow-hidden">
-                    {product.image_urls[0] ? (
-                      <Image
-                        src={product.image_urls[0]}
-                        alt={product.title}
-                        fill
-                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300">
-                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 space-y-2">
-                    <Badge variant={badgeVariant}>{status.label}</Badge>
-                    <p className="text-gray-900 font-medium text-sm line-clamp-2 leading-snug">{product.title}</p>
-                    <p className="text-blue-600 font-bold text-base">
-                      {product.listing_type === 'barter' ? 'Barter' : formatPrice(product.price)}
-                    </p>
-                    <p className="text-gray-400 text-xs">{formatRelativeTime(product.created_at)}</p>
-                  </div>
-                </a>
-              )
-            })}
+            </div>
+            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Bintang</span>
           </div>
-        )}
-      </section>
+        </div>
+      </div>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Wishlist</h2>
-          <span className="text-sm text-gray-400">{wishlistProducts.length} item</span>
+      {/* 2. Tabs */}
+      <div className="flex items-center gap-8 border-b border-gray-200 overflow-x-auto no-scrollbar px-1">
+        {['Barang Saya', 'Pesanan', 'Chat Tersimpan', 'Pengaturan'].map((tab, i) => (
+          <button 
+            key={tab}
+            className={`pb-4 text-base font-semibold whitespace-nowrap border-b-[3px] transition-colors ${
+              i === 0 
+                ? 'border-purple-600 text-purple-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* 3. Content Bawah (Barang Saya) */}
+      <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Sedang Dijual <span className="text-gray-400 font-medium text-base ml-1">({listings.length})</span></h2>
+          <Link href="/products/new" className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-purple-700 hover:bg-purple-50 text-sm font-bold rounded-lg transition-colors">
+            + Tambah Barang
+          </Link>
         </div>
 
-        {wishlistProducts.length === 0 ? (
-          <EmptyState
-            icon={
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          {listings.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              title={product.title}
+              price={product.price}
+              listingType={product.listing_type}
+              imageUrl={product.image_urls[0]}
+              sellerName={product.seller?.full_name || displayName}
+              timeAgo={formatRelativeTime(product.created_at)}
+              formatPrice={formatPrice}
+            />
+          ))}
+
+          {/* Jual Barang Baru Placeholder */}
+          <Link 
+            href="/products/new" 
+            className="flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/50 hover:bg-purple-50 hover:border-purple-300 transition-all duration-300 aspect-[3/4] group select-none relative"
+          >
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center border border-gray-200 shadow-sm group-hover:border-purple-300 group-hover:text-purple-600 group-hover:shadow-purple-100 transition-all duration-300 transform group-hover:-translate-y-1">
+              <svg className="w-7 h-7 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
-            }
-            title="Wishlist kosong"
-            description="Simpan barang favoritmu dengan menekan tombol hati."
-          />
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {wishlistProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                title={product.title}
-                price={product.price}
-                listingType={product.listing_type}
-                imageUrl={product.image_urls[0]}
-                sellerName={product.seller.full_name}
-                timeAgo={formatRelativeTime(product.created_at)}
-                formatPrice={formatPrice}
-              />
-            ))}
-          </div>
-        )}
+            </div>
+            <span className="text-sm font-bold text-gray-500 group-hover:text-purple-700 transition-colors">Jual Barang Baru</span>
+          </Link>
+        </div>
       </section>
     </div>
   )

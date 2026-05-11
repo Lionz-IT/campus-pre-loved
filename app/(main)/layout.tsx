@@ -22,36 +22,41 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <GSAPAnimations />
       
       {/* Modern Glassmorphism Top Navigation */}
-      <header className="gsap-header sticky top-0 z-40 bg-[var(--surface)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-sm transition-all duration-300">
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between" aria-label="Navigasi desktop">
+      <header className="gsap-header sticky top-0 z-40 bg-gradient-to-b from-purple-50 to-white/95 backdrop-blur-xl border-b border-[var(--border)] shadow-sm transition-all duration-300">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative" aria-label="Navigasi desktop">
           {/* Logo */}
-          <Link href={ROUTES.HOME} className="flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-xl group transition-transform hover:scale-[1.02]" aria-label="Campus Pre-loved - Beranda">
+          <Link href={ROUTES.HOME} className="flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-xl group transition-transform hover:scale-[1.02]" aria-label="CampusMarket - Beranda">
             <div className="w-10 h-10 bg-gradient-to-br from-[var(--primary-light)] to-[var(--primary)] rounded-xl flex items-center justify-center shadow-md shadow-[var(--primary)]/20" aria-hidden="true">
-              <span className="text-white font-black text-lg tracking-wider">CP</span>
+              <span className="text-[var(--accent)] font-black text-lg tracking-wider">CM</span>
             </div>
-            <span className="text-xl font-extrabold text-[var(--foreground)] hidden sm:block tracking-tight">
-              Campus <span className="text-[var(--primary)] group-hover:text-[var(--primary-dark)] transition-colors">Pre-loved</span>
+            <span className="text-xl font-extrabold text-[#3730a3] hidden sm:block tracking-tight">
+              CampusMarket
             </span>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-2">
-            <Link href={ROUTES.HOME} prefetch={true} className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Beranda</Link>
-            <Link href={ROUTES.PRODUCTS} prefetch={true} className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Jelajahi</Link>
-            <Link href={ROUTES.CHATS} prefetch={true} className="relative px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">
+          <div className="hidden md:flex items-center justify-center absolute left-1/2 -translate-x-1/2 gap-6">
+            <Link href={ROUTES.PRODUCTS} prefetch={true} className="text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">Jelajahi</Link>
+            <Link href={ROUTES.CHATS} prefetch={true} className="relative text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
               Chat
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--accent)] text-[var(--foreground)] text-[10px] font-bold rounded-full px-1.5 leading-none shadow-sm shadow-[var(--accent)]/30 animate-pulse" aria-label={`${unreadCount} pesan belum dibaca`}>
+                <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--accent)] text-white text-[10px] font-bold rounded-full px-1.5 leading-none shadow-sm shadow-[var(--accent)]/30 animate-pulse" aria-label={`${unreadCount} pesan belum dibaca`}>
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
             </Link>
-            <Link href={ROUTES.PROFILE} prefetch={true} className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Profil</Link>
-            
-            {/* Prominent CTA Button */}
-            <div className="w-px h-6 bg-[var(--border)] mx-2"></div>
-            <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="ml-1 px-5 py-2.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            <Link href={ROUTES.PROFILE} prefetch={true} className="text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">Profil</Link>
+          </div>
+
+          <div className="hidden md:flex items-center gap-4">
+             <button aria-label="Notifikasi" className="text-[#3730a3] hover:text-[var(--accent)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-lg p-1.5">
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+             </button>
+             <button aria-label="Keranjang Belanja" className="text-[#3730a3] hover:text-[var(--accent)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-lg p-1.5">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+             </button>
+
+            <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="px-5 py-2.5 bg-[var(--primary)] text-[var(--accent)] hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2 border border-[var(--accent)]/20">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
               Jual Barang
             </Link>
           </div>

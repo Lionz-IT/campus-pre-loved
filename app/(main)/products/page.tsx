@@ -1,27 +1,10 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import dynamic from 'next/dynamic'
 import { getMarketplaceFeedAction } from '@/actions/product.actions'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '@/lib/constants/pens'
 import EmptyState from '@/components/ui/EmptyState'
-import CategoryIcon from '@/components/ui/CategoryIcon'
-import SearchBar from '@/components/ui/SearchBar'
-
-const InfiniteProductGrid = dynamic(() => import('@/components/product/InfiniteProductGrid'), {
-  loading: () => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <div className="aspect-square skeleton-shimmer" />
-          <div className="p-3 space-y-2">
-            <div className="h-4 w-3/4 rounded skeleton-shimmer" />
-            <div className="h-5 w-1/2 rounded skeleton-shimmer" />
-          </div>
-        </div>
-      ))}
-    </div>
-  ),
-})
+import { ProductCard } from '@/components/ui/Card'
+import { formatPrice, formatRelativeTime } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Jelajahi Produk'
@@ -33,16 +16,6 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Termahal' },
 ] as const
 
-function buildHref(base: Record<string, string | undefined>, overrides: Record<string, string | undefined>) {
-  const merged = { ...base, ...overrides }
-  const params = new URLSearchParams()
-  for (const [k, v] of Object.entries(merged)) {
-    if (v && v !== 'all' && v !== 'newest') params.set(k, v)
-  }
-  const qs = params.toString()
-  return `/products${qs ? `?${qs}` : ''}`
-}
-
 export default async function ProductsBrowsePage({
   searchParams,
 }: {
@@ -52,120 +25,155 @@ export default async function ProductsBrowsePage({
   const result = await getMarketplaceFeedAction({ category, search: q, sort, condition, limit: 24 })
   const products = result.success ? result.data ?? [] : []
 
-  const currentParams = { category, q, sort, condition }
-
   return (
-    <div className="space-y-6">
-      <section className="space-y-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Jelajahi Produk</h1>
-          <p className="text-gray-500 mt-1 text-sm">Cari dan temukan barang yang kamu butuhkan</p>
+          <h1 className="text-2xl font-bold text-gray-900">Semua Barang</h1>
+          <p className="text-sm text-gray-500 mt-1">{products.length} barang ditemukan</p>
         </div>
         
-        <Suspense>
-          <SearchBar defaultValue={q} />
-        </Suspense>
-      </section>
-
-      <section>
-        <div className="flex gap-2 flex-wrap">
-          <a
-            href={buildHref(currentParams, { category: undefined })}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              !category ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            Semua
-          </a>
-          {PRODUCT_CATEGORIES.map((cat) => (
-            <a
-              key={cat.value}
-              href={buildHref(currentParams, { category: cat.value })}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                category === cat.value
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+        <div className="flex items-center gap-2 relative">
+          <span className="text-sm text-gray-600 font-medium">Urutkan:</span>
+          <div className="relative">
+            <select 
+              defaultValue={sort || 'newest'}
+              className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4C1A57] focus:border-transparent cursor-pointer font-medium"
             >
-              <CategoryIcon name={cat.icon} className="w-4 h-4 inline-block -mt-0.5" /> {cat.label}
-            </a>
-          ))}
+              {SORT_OPTIONS.map(opt => (
+                 <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
-          </svg>
-          <span className="text-xs text-gray-500 font-medium">Urutkan:</span>
-          {SORT_OPTIONS.map((opt) => (
-            <a
-              key={opt.value}
-              href={buildHref(currentParams, { sort: opt.value })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                (sort ?? 'newest') === opt.value
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
-              }`}
-            >
-              {opt.label}
-            </a>
-          ))}
-        </div>
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Sidebar Kiri */}
+        <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
+          {/* Kategori */}
+          <div>
+            <h3 className="font-bold text-[#4C1A57] mb-4 tracking-wide">Kategori</h3>
+            <div className="space-y-3">
+               {PRODUCT_CATEGORIES.map(cat => (
+                 <label key={cat.value} className="flex items-center gap-3 cursor-pointer group">
+                   <div className="relative flex items-center justify-center">
+                     <input type="checkbox" className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-[#4C1A57] checked:border-[#4C1A57] transition-colors" />
+                     <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                   </div>
+                   <span className="text-sm text-gray-700 group-hover:text-[#4C1A57] transition-colors">{cat.label}</span>
+                 </label>
+               ))}
+            </div>
+          </div>
 
-        <div className="w-px h-5 bg-gray-200 hidden sm:block" />
+          <hr className="border-gray-200" />
 
-        <div className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-          </svg>
-          <span className="text-xs text-gray-500 font-medium">Kondisi:</span>
-          <a
-            href={buildHref(currentParams, { condition: undefined })}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              !condition
-                ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
-            }`}
-          >
-            Semua
-          </a>
-          {PRODUCT_CONDITIONS.map((cond) => (
-            <a
-              key={cond.value}
-              href={buildHref(currentParams, { condition: cond.value })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                condition === cond.value
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
-              }`}
-            >
-              {cond.label}
-            </a>
-          ))}
-        </div>
-      </section>
+          {/* Rentang Harga */}
+          <div>
+            <h3 className="font-bold text-[#4C1A57] mb-4 tracking-wide">Rentang Harga</h3>
+            <div className="flex items-center gap-2 mb-4">
+               <div className="relative flex-1">
+                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">Rp</span>
+                 <input type="number" placeholder="MIN" className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#4C1A57] focus:border-transparent outline-none" />
+               </div>
+               <span className="text-gray-400 font-medium">-</span>
+               <div className="relative flex-1">
+                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">Rp</span>
+                 <input type="number" placeholder="MAX" className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#4C1A57] focus:border-transparent outline-none" />
+               </div>
+            </div>
+            <button className="w-full py-2 px-4 bg-white border-2 border-[#4C1A57] text-[#4C1A57] rounded-lg text-sm font-bold hover:bg-purple-50 transition-colors duration-200">
+              Terapkan Harga
+            </button>
+          </div>
 
-      <section>
-        {products.length === 0 ? (
-          <EmptyState
-            icon={
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-            }
-            title="Tidak ada produk ditemukan"
-            description="Coba kata kunci, kategori, atau kondisi lain"
-          />
-        ) : (
-          <InfiniteProductGrid
-            initialProducts={products}
-            filters={{ category, search: q, sort, condition }}
-            pageSize={24}
-          />
-        )}
-      </section>
+          <hr className="border-gray-200" />
+
+          {/* Kondisi Barang */}
+          <div>
+             <h3 className="font-bold text-[#4C1A57] mb-4 tracking-wide">Kondisi Barang</h3>
+             <div className="space-y-3">
+               <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center">
+                    <input type="radio" name="kondisi" defaultChecked className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full cursor-pointer checked:border-[#4C1A57] transition-colors" />
+                    <div className="absolute w-2.5 h-2.5 bg-[#4C1A57] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                  </div>
+                  <span className="text-sm text-gray-700 group-hover:text-[#4C1A57] transition-colors font-medium">Semua Kondisi</span>
+               </label>
+               {PRODUCT_CONDITIONS.map(cond => (
+                 <label key={cond.value} className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center">
+                    <input type="radio" name="kondisi" className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full cursor-pointer checked:border-[#4C1A57] transition-colors" />
+                    <div className="absolute w-2.5 h-2.5 bg-[#4C1A57] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                  </div>
+                  <span className="text-sm text-gray-700 group-hover:text-[#4C1A57] transition-colors">{cond.label}</span>
+                 </label>
+               ))}
+             </div>
+          </div>
+        </aside>
+
+        {/* Product Grid & Pagination */}
+        <main className="flex-1 flex flex-col">
+          {products.length === 0 ? (
+            <EmptyState
+              icon={
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+              }
+              title="Tidak ada produk ditemukan"
+              description="Coba kata kunci, kategori, atau kondisi lain"
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-10">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    id={product.id}
+                    title={product.title}
+                    price={product.price}
+                    listingType={product.listing_type}
+                    imageUrl={product.image_urls[0]}
+                    sellerName={product.seller.full_name}
+                    timeAgo={formatRelativeTime(product.created_at)}
+                    formatPrice={formatPrice}
+                  />
+                ))}
+              </div>
+
+              {/* Mock Pagination */}
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#4C1A57] text-white font-medium shadow-sm transition-colors">
+                  1
+                </button>
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                  2
+                </button>
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-colors">
+                  3
+                </button>
+                <span className="w-10 h-10 flex items-center justify-center text-gray-500 tracking-widest font-bold">
+                  ...
+                </span>
+                <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
     </div>
   )
 }
+
