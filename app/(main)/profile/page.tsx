@@ -64,7 +64,7 @@ export default async function MyProfilePage() {
             </div>
             
             <p className="text-sm text-gray-500 font-medium">
-              {profile?.department || 'Universitas'} • Angkatan {profile?.angkatan || '2021'}
+              {profile?.department || 'Universitas'} • Angkatan {profile?.nim ? '20' + profile.nim.substring(2, 4) : '2021'}
             </p>
             
             <div className="flex items-center justify-center sm:justify-start gap-3 mt-4 pt-2">
