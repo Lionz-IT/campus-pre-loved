@@ -137,6 +137,25 @@ export async function acceptOfferAction(
     return { success: false, error: firstError ?? 'Data tidak valid' }
   }
 
+  const { data: chat, error: chatError } = await supabase
+    .from('chats')
+    .select('product_id, buyer_id, seller_id')
+    .eq('id', chatId)
+    .single()
+
+  if (chatError || !chat) return { success: false, error: 'Chat tidak ditemukan' }
+  if (user.id !== chat.seller_id) return { success: false, error: 'Hanya penjual yang dapat menerima tawaran' }
+
+  const { error: productUpdateError } = await supabase
+    .from('products')
+    .update({ status: 'booked', booked_by: chat.buyer_id })
+    .eq('id', chat.product_id)
+    .eq('seller_id', user.id)
+
+  if (productUpdateError) {
+    console.error('Gagal mengupdate status produk:', productUpdateError)
+  }
+
   const { error } = await supabase.from('messages').insert({
     chat_id:      chatId,
     sender_id:    user.id,
@@ -145,6 +164,9 @@ export async function acceptOfferAction(
   })
 
   if (error) return { success: false, error: error.message }
+  
+  revalidatePath(ROUTES.CHAT_ROOM(chatId))
+  revalidatePath('/chats')
   return { success: true }
 }
 
