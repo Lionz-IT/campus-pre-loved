@@ -76,20 +76,25 @@ export async function getChatMessagesAction(
 export async function sendMessageAction(
   chatId:  string,
   content: string,
-): Promise<ActionResult> {
+): Promise<ActionResult<MessageWithSender>> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { error } = await supabase.from('messages').insert({
+  const { data, error } = await supabase.from('messages').insert({
     chat_id:      chatId,
     sender_id:    user.id,
     message_type: 'text',
     content:      content.trim(),
-  })
+  }).select(`
+    *,
+    sender:profiles!messages_sender_id_fkey ( id, full_name, avatar_url )
+  `).single()
 
   if (error) return { success: false, error: error.message }
-  return { success: true }
+  
+  revalidatePath(ROUTES.CHAT_ROOM(chatId))
+  return { success: true, data: data as MessageWithSender }
 }
 
 

@@ -66,7 +66,15 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
       setError(null)
 
       const result = await sendMessageAction(chatId, content)
-      if (!result.success) setError(result.error)
+      if (!result.success) {
+        setError(result.error)
+      } else if (result.data) {
+        // Optimistic update agar langsung muncul tanpa tunggu event socket
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === result.data!.id)) return prev
+          return [...prev, result.data!]
+        })
+      }
 
       setIsSending(false)
     },
