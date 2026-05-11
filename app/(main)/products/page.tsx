@@ -140,10 +140,9 @@ export default async function ProductsBrowsePage({
                     title={product.title}
                     price={product.price}
                     listingType={product.listing_type}
-                    imageUrl={product.image_urls[0]}
-                    sellerName={product.seller.full_name}
+                    imageUrl={product.image_urls?.[0]}
+                    sellerName={product.seller_id} // Should join with users
                     timeAgo={formatRelativeTime(product.created_at)}
-                    formatPrice={formatPrice}
                   />
                 ))}
               </div>

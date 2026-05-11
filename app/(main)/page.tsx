@@ -114,16 +114,15 @@ export default async function HomePage({
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product, i) => (
               <div key={product.id} className={`animate-fade-in-up stagger-${Math.min(i + 1, 8)}`}>
-                <ProductCard
-                  id={product.id}
-                  title={product.title}
-                  price={product.price}
-                  listingType={product.listing_type}
-                  imageUrl={product.image_urls[0]}
-                  sellerName={product.seller.full_name}
-                  timeAgo={formatRelativeTime(product.created_at)}
-                  formatPrice={formatPrice}
-                />
+              <ProductCard
+                id={product.id}
+                title={product.title}
+                price={product.price}
+                listingType={product.listing_type}
+                imageUrl={product.image_urls?.[0]}
+                sellerName={product.seller_id} // Should join with users
+                timeAgo={formatRelativeTime(product.created_at)}
+              />
               </div>
             ))}
           </div>

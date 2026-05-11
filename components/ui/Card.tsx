@@ -1,4 +1,6 @@
-import { cn } from '@/lib/utils'
+'use client'
+
+import { cn, formatPrice } from '@/lib/utils'
 import Image from 'next/image'
 import type { ReactNode } from 'react'
 
@@ -30,10 +32,9 @@ interface ProductCardProps {
   imageUrl?: string
   sellerName: string
   timeAgo: string
-  formatPrice: (amount: number | null | undefined) => string
 }
 
-export function ProductCard({ id, title, price, listingType, imageUrl, sellerName, timeAgo, formatPrice }: ProductCardProps) {
+export function ProductCard({ id, title, price, listingType, imageUrl, sellerName, timeAgo }: ProductCardProps) {
   return (
     <a
       href={`/products/${id}`}

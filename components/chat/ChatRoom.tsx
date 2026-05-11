@@ -67,7 +67,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
         <div className="flex items-center gap-3 p-4 bg-purple-50/30">
           <div className="relative w-10 h-10 rounded-full overflow-hidden bg-purple-100 flex-shrink-0">
              {otherPerson.avatar_url ? (
-               <Image src={otherPerson.avatar_url} alt={otherPerson.full_name} fill className="object-cover" />
+               <Image src={otherPerson.avatar_url} alt={otherPerson.full_name} fill sizes="40px" className="object-cover" />
              ) : (
                <div className="w-full h-full flex items-center justify-center text-purple-700 font-bold text-sm">
                  {getInitials(otherPerson.full_name)}
@@ -88,7 +88,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
         <div className="px-4 py-3 bg-white flex items-center gap-3 border-t border-gray-50">
            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200">
             {product.image_urls?.[0] ? (
-               <Image src={product.image_urls[0]} alt={product.title} fill className="object-cover" />
+               <Image src={product.image_urls[0]} alt={product.title} fill sizes="48px" className="object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-300">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -365,7 +365,7 @@ function MessageBubble({ message, isOwn, isSeller, chatId, otherPerson, showAvat
         <div className={`relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden shadow-sm border border-gray-100 ${showAvatar ? 'bg-purple-100 text-purple-600' : 'bg-transparent border-transparent'}`}>
           {showAvatar && (
             otherPerson.avatar_url
-              ? <Image src={otherPerson.avatar_url} alt="" fill className="object-cover" />
+              ? <Image src={otherPerson.avatar_url} alt="" fill sizes="32px" className="object-cover" />
               : getInitials(otherPerson.full_name)
           )}
         </div>

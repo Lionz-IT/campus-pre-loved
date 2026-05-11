@@ -6,6 +6,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import GSAPAnimations from '@/components/layout/GSAPAnimations'
 import NextTopLoader from 'nextjs-toploader'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -25,12 +26,12 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <header className="gsap-header sticky top-0 z-40 bg-gradient-to-b from-purple-50 to-white/95 backdrop-blur-xl border-b border-[var(--border)] shadow-sm transition-all duration-300">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative" aria-label="Navigasi desktop">
           {/* Logo */}
-          <Link href={ROUTES.HOME} className="flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-xl group transition-transform hover:scale-[1.02]" aria-label="CampusMarket - Beranda">
-            <div className="w-10 h-10 bg-gradient-to-br from-[var(--primary-light)] to-[var(--primary)] rounded-xl flex items-center justify-center shadow-md shadow-[var(--primary)]/20" aria-hidden="true">
-              <span className="text-[var(--accent)] font-black text-lg tracking-wider">CM</span>
+          <Link href={ROUTES.HOME} className="flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-[var(--primary)] rounded-xl group transition-transform hover:scale-[1.02]" aria-label="Campus Pre-loved - Beranda">
+            <div className="relative w-14 h-14" aria-hidden="true">
+              <Image src="/logo.png" alt="Campus Pre-loved Logo" fill sizes="56px" className="object-contain" priority />
             </div>
-            <span className="text-xl font-extrabold text-[#3730a3] hidden sm:block tracking-tight">
-              CampusMarket
+            <span className="text-2xl font-extrabold text-[var(--primary)] hidden sm:block tracking-tight">
+              Campus Pre-loved
             </span>
           </Link>
 
@@ -55,7 +56,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
              </button>
 
-            <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="px-5 py-2.5 bg-[var(--primary)] text-[var(--accent)] hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2 border border-[var(--accent)]/20">
+            <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="px-5 py-2.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2 border border-[var(--accent)]/20">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
               Jual Barang
             </Link>
@@ -73,8 +74,8 @@ export default async function MainLayout({ children }: { children: React.ReactNo
             {/* Branding Column */}
             <div className="gsap-footer-col col-span-1 md:col-span-2">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary-light)] to-[var(--primary)] rounded-2xl flex items-center justify-center shadow-lg shadow-[var(--primary)]/20">
-                  <span className="text-white font-black text-xl tracking-wider">CP</span>
+                <div className="relative w-16 h-16">
+                  <Image src="/logo.png" alt="Campus Pre-loved Logo" fill sizes="64px" className="object-contain" />
                 </div>
                 <span className="text-2xl font-extrabold text-[var(--foreground)] tracking-tight">
                   Campus <span className="text-[var(--primary)]">Pre-loved</span>
