@@ -36,27 +36,29 @@ export default function GSAPAnimations() {
     gsap.from('.gsap-footer', {
       scrollTrigger: {
         trigger: '.gsap-footer',
-        start: 'top 95%',
-        toggleActions: 'play none none reverse',
+        start: 'top bottom+=100',
+        toggleActions: 'play none none none',
       },
-      y: 50,
+      y: 30,
       opacity: 0,
-      duration: 0.8,
+      duration: 0.6,
       ease: 'power3.out',
+      clearProps: 'all'
     })
 
     // Footer columns staggered animation
     gsap.from('.gsap-footer-col', {
       scrollTrigger: {
         trigger: '.gsap-footer',
-        start: 'top 90%',
-        toggleActions: 'play none none reverse',
+        start: 'top bottom+=100',
+        toggleActions: 'play none none none',
       },
-      y: 30,
+      y: 20,
       opacity: 0,
-      duration: 0.6,
+      duration: 0.5,
       stagger: 0.1,
       ease: 'power2.out',
+      clearProps: 'all'
     })
   }, { dependencies: [pathname] })
 
