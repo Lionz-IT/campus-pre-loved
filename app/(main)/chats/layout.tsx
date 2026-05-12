@@ -17,13 +17,13 @@ export default async function ChatsLayout({ children }: { children: React.ReactN
   const chats  = result.success ? result.data ?? [] : []
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white max-w-[1400px] mx-auto xl:border-x border-gray-200 shadow-sm">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white max-w-[1400px] mx-auto xl:border-x border-gray-200 shadow-sm relative">
       <ChatListRealtime />
       <div className="hidden md:flex flex-col w-80 lg:w-96 border-r border-gray-200 flex-shrink-0 bg-white">
         <ChatsSidebar chats={chats} userId={user.id} />
       </div>
       
-      <div className="relative flex-1 flex flex-col min-w-0 bg-gray-50/30">
+      <div className="flex-1 flex flex-col min-w-0 bg-gray-50/30 relative">
         {children}
       </div>
     </div>
