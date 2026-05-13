@@ -218,7 +218,7 @@ export type Database = {
     }
     Functions: Record<string, never>
     Enums: {
-      product_status:   'available' | 'booked' | 'sold'
+      product_status:   'available' | 'sold'
       product_category: 'microcontroller' | 'electronic_component' | 'module' | 'tool' | 'book_module' | 'laptop_accessory' | 'clothing' | 'stationery' | 'other'
       message_type:     'text' | 'offer' | 'offer_accept' | 'offer_reject' | 'system'
       listing_type:     'sell' | 'barter'

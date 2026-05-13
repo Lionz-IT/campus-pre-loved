@@ -44,8 +44,8 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
   const initialMessages = messagesResult.success ? messagesResult.data ?? [] : []
 
   const isSeller = user.id === chat.seller_id
-  const statusVariant = chat.product.status === 'available' ? 'green' as const : chat.product.status === 'booked' ? 'yellow' as const : 'gray' as const
-  const statusLabel = chat.product.status === 'available' ? 'Tersedia' : chat.product.status === 'booked' ? 'Di-booking' : 'Terjual'
+  const statusVariant = chat.product.status === 'available' ? 'green' as const : 'gray' as const
+  const statusLabel = chat.product.status === 'available' ? 'Tersedia' : 'Terjual'
 
   return (
     <div className="w-full h-full flex flex-col absolute inset-0 md:static md:max-w-2xl md:mx-auto md:h-full bg-white md:bg-transparent">

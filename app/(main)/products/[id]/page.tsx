@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createChatRoomAction } from '@/actions/chat.actions'
-import { bookProductAction, cancelBookingAction, markAsSoldAction } from '@/actions/product.actions'
+import { markAsSoldAction, revertSoldAction } from '@/actions/product.actions'
 import { checkWishlistAction } from '@/actions/wishlist.actions'
 import { getProductReviewsAction, checkCanReviewAction } from '@/actions/review.actions'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
@@ -52,15 +52,12 @@ async function ProductInteractions({ product, user }: { product: any, user: any 
   const supabase = await createSupabaseServerClient()
   const isLoggedIn = !!user
   const isSeller   = user?.id === product.seller_id
-  const isBooker   = user?.id === product.booked_by
 
   let chatPromise: Promise<any> = Promise.resolve({ data: null })
   
   if (isLoggedIn) {
     if (!isSeller) {
       chatPromise = supabase.from('chats').select('id').eq('product_id', product.id).eq('buyer_id', user.id).maybeSingle() as any
-    } else if (product.status === 'booked' && product.booked_by) {
-      chatPromise = supabase.from('chats').select('id').eq('product_id', product.id).eq('buyer_id', product.booked_by).maybeSingle() as any
     }
   }
 
@@ -101,7 +98,7 @@ async function ProductInteractions({ product, user }: { product: any, user: any 
                 Edit Produk
               </Button>
             </a>
-            {product.status === 'booked' && existingChatId && (
+            {product.status === 'available' && existingChatId && (
               <form action={async () => {
                 'use server'
                 await markAsSoldAction(product.id, existingChatId!)
@@ -111,18 +108,17 @@ async function ProductInteractions({ product, user }: { product: any, user: any 
                 </SubmitButton>
               </form>
             )}
+            {product.status === 'sold' && existingChatId && (
+              <form action={async () => {
+                'use server'
+                await revertSoldAction(product.id, existingChatId!)
+              }}>
+                <SubmitButton variant="danger" size="lg" pendingText="Membatalkan...">
+                  Batalkan Penjualan
+                </SubmitButton>
+              </form>
+            )}
           </div>
-        )}
-
-        {isBooker && existingChatId && (
-          <form action={async () => {
-            'use server'
-            await cancelBookingAction(product.id, existingChatId!)
-          }}>
-            <SubmitButton variant="danger" fullWidth size="lg" pendingText="Membatalkan...">
-              Batalkan Booking
-            </SubmitButton>
-          </form>
         )}
       </div>
 
@@ -156,8 +152,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   const isLoggedIn = !!user
   const conditionLabel = PRODUCT_CONDITIONS.find((c) => c.value === product.condition)
-  const statusInfo     = PRODUCT_STATUS_LABELS[product.status]
-  const statusBadgeVariant = product.status === 'available' ? 'green' as const : product.status === 'booked' ? 'yellow' as const : 'gray' as const
+  const statusKey      = product.status
+  const statusInfo     = PRODUCT_STATUS_LABELS[statusKey]
+  const statusBadgeVariant = product.status === 'available' ? 'green' as const : 'gray' as const
 
   return (
     <div className="max-w-5xl mx-auto">

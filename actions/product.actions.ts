@@ -117,67 +117,6 @@ export async function deleteProductAction(productId: string): Promise<ActionResu
 }
 
 
-export async function bookProductAction(
-  productId: string,
-  chatId: string,
-): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Unauthorized' }
-
-
-  const { error } = await supabase
-    .from('products')
-    .update({ status: 'booked', booked_by: user.id })
-    .eq('id', productId)
-    .eq('status', 'available')
-
-  if (error) return { success: false, error: error.message }
-
-
-  await supabase.from('messages').insert({
-    chat_id:      chatId,
-    sender_id:    user.id,
-    message_type: 'system',
-    content:      'Barang berhasil di-booking. Segera atur jadwal COD!',
-    payload:      { event: 'status_changed', from: 'available', to: 'booked' },
-  })
-
-  revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
-  return { success: true }
-}
-
-
-export async function cancelBookingAction(
-  productId: string,
-  chatId: string,
-): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Unauthorized' }
-
-
-  const { error } = await supabase
-    .from('products')
-    .update({ status: 'available' })
-    .eq('id', productId)
-    .eq('booked_by', user.id)
-
-  if (error) return { success: false, error: error.message }
-
-  await supabase.from('messages').insert({
-    chat_id:      chatId,
-    sender_id:    user.id,
-    message_type: 'system',
-    content:      'Booking dibatalkan. Barang kembali tersedia.',
-    payload:      { event: 'booking_cancelled', from: 'booked', to: 'available' },
-  })
-
-  revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
-  return { success: true }
-}
-
-
 export async function markAsSoldAction(
   productId: string,
   chatId: string,
@@ -192,7 +131,7 @@ export async function markAsSoldAction(
     .update({ status: 'sold' })
     .eq('id', productId)
     .eq('seller_id', user.id)
-    .eq('status', 'booked')
+    .eq('status', 'available')
 
   if (error) return { success: false, error: error.message }
 
@@ -201,10 +140,71 @@ export async function markAsSoldAction(
     sender_id:    user.id,
     message_type: 'system',
     content:      'Transaksi selesai! Barang sudah terjual. Terima kasih!',
-    payload:      { event: 'item_sold', from: 'booked', to: 'sold' },
+    payload:      { event: 'item_sold', from: 'available', to: 'sold' },
   })
 
   revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
+  revalidatePath(ROUTES.HOME)
+  revalidatePath(ROUTES.PRODUCTS)
+  revalidatePath(ROUTES.PROFILE)
+  return { success: true }
+}
+
+
+export async function revertSoldAction(
+  productId: string,
+  chatId: string,
+): Promise<ActionResult> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('products')
+    .update({ status: 'available' })
+    .eq('id', productId)
+    .eq('seller_id', user.id)
+    .eq('status', 'sold')
+
+  if (error) return { success: false, error: error.message }
+
+  await supabase.from('messages').insert({
+    chat_id:      chatId,
+    sender_id:    user.id,
+    message_type: 'system',
+    content:      'Penjualan dibatalkan. Barang kembali tersedia.',
+    payload:      { event: 'sale_reverted', from: 'sold', to: 'available' },
+  })
+
+  revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
+  revalidatePath(ROUTES.HOME)
+  revalidatePath(ROUTES.PRODUCTS)
+  revalidatePath(ROUTES.PROFILE)
+  return { success: true }
+}
+
+
+export async function toggleProductStatusAction(
+  productId: string,
+  newStatus: 'available' | 'sold',
+): Promise<ActionResult> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('products')
+    .update({ status: newStatus })
+    .eq('id', productId)
+    .eq('seller_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
+  revalidatePath(ROUTES.PRODUCT_EDIT(productId))
+  revalidatePath(ROUTES.HOME)
+  revalidatePath(ROUTES.PRODUCTS)
+  revalidatePath(ROUTES.PROFILE)
   return { success: true }
 }
 

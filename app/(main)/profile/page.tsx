@@ -128,6 +128,7 @@ export default async function MyProfilePage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {listings.map((product) => (
               <ProductCard
+                key={product.id}
                 id={product.id}
                 title={product.title}
                 price={product.price}
@@ -135,6 +136,7 @@ export default async function MyProfilePage() {
                 imageUrl={product.image_urls?.[0]}
                 sellerName={user.id}
                 timeAgo={formatRelativeTime(product.created_at)}
+                status={product.status}
               />
           ))}
 

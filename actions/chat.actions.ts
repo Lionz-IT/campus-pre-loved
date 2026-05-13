@@ -148,7 +148,7 @@ export async function acceptOfferAction(
 
   const { error: productUpdateError } = await supabase
     .from('products')
-    .update({ status: 'booked', booked_by: chat.buyer_id })
+    .update({ status: 'sold' })
     .eq('id', chat.product_id)
     .eq('seller_id', user.id)
 

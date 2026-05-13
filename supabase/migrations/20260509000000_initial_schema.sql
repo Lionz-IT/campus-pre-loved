@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "unaccent";
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'product_status') THEN
-    CREATE TYPE product_status AS ENUM ('available', 'booked', 'sold');
+    CREATE TYPE product_status AS ENUM ('available', 'sold');
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'product_category') THEN
     CREATE TYPE product_category AS ENUM (
@@ -54,7 +54,6 @@ CREATE TABLE IF NOT EXISTS public.products (
   condition       TEXT              NOT NULL DEFAULT 'good'
                                       CHECK (condition IN ('new','like_new','good','fair','poor')),
   status          product_status    NOT NULL DEFAULT 'available',
-  booked_by       UUID              REFERENCES public.profiles(id) ON DELETE SET NULL,
   image_urls      TEXT[]            NOT NULL DEFAULT '{}',
   campus_location TEXT              DEFAULT 'PENS — Surabaya',
   is_negotiable   BOOLEAN           NOT NULL DEFAULT TRUE,
@@ -94,7 +93,6 @@ CREATE INDEX IF NOT EXISTS idx_profiles_email  ON public.profiles (campus_email)
 CREATE INDEX IF NOT EXISTS idx_profiles_nim    ON public.profiles (nim) WHERE nim IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_products_feed       ON public.products (status, category) WHERE is_deleted = FALSE;
 CREATE INDEX IF NOT EXISTS idx_products_seller     ON public.products (seller_id);
-CREATE INDEX IF NOT EXISTS idx_products_booked_by  ON public.products (booked_by) WHERE booked_by IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_products_title_trgm ON public.products USING GIN (title       gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_products_desc_trgm  ON public.products USING GIN (description gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_chats_buyer    ON public.chats (buyer_id);
@@ -162,14 +160,10 @@ RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
   IF OLD.status = NEW.status THEN RETURN NEW; END IF;
   IF NOT (
-       (OLD.status = 'available' AND NEW.status = 'booked')
-    OR (OLD.status = 'booked'    AND NEW.status = 'available')
-    OR (OLD.status = 'booked'    AND NEW.status = 'sold')
+       (OLD.status = 'available' AND NEW.status = 'sold')
+    OR (OLD.status = 'sold'      AND NEW.status = 'available')
   ) THEN
     RAISE EXCEPTION 'Transisi status produk tidak valid: % → %', OLD.status, NEW.status;
-  END IF;
-  IF OLD.status = 'booked' AND NEW.status = 'available' THEN
-    NEW.booked_by = NULL;
   END IF;
   RETURN NEW;
 END;
@@ -218,10 +212,6 @@ DROP POLICY IF EXISTS "products: penjual tambah produk" ON public.products;
 CREATE POLICY "products: penjual tambah produk" ON public.products FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND auth.uid() = seller_id);
 DROP POLICY IF EXISTS "products: penjual edit produk sendiri" ON public.products;
 CREATE POLICY "products: penjual edit produk sendiri" ON public.products FOR UPDATE USING (auth.uid() = seller_id) WITH CHECK (auth.uid() = seller_id);
-DROP POLICY IF EXISTS "products: pembeli bisa booking" ON public.products;
-CREATE POLICY "products: pembeli bisa booking" ON public.products FOR UPDATE USING (status = 'available' AND auth.role() = 'authenticated' AND auth.uid() <> seller_id) WITH CHECK (status = 'booked' AND booked_by = auth.uid());
-DROP POLICY IF EXISTS "products: pembeli bisa cancel booking sendiri" ON public.products;
-CREATE POLICY "products: pembeli bisa cancel booking sendiri" ON public.products FOR UPDATE USING (status = 'booked' AND booked_by = auth.uid()) WITH CHECK (status = 'available' AND (booked_by IS NULL OR booked_by = auth.uid()));
 DROP POLICY IF EXISTS "products: tidak bisa hard-delete" ON public.products;
 CREATE POLICY "products: tidak bisa hard-delete" ON public.products FOR DELETE USING (FALSE);
 

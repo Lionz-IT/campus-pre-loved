@@ -53,6 +53,5 @@ export type ProductConditionValue = (typeof PRODUCT_CONDITIONS)[number]['value']
 
 export const PRODUCT_STATUS_LABELS = {
   available: { label: 'Tersedia',    color: 'green'  },
-  booked:    { label: 'Di-booking',  color: 'yellow' },
   sold:      { label: 'Terjual',     color: 'gray'   },
 } as const

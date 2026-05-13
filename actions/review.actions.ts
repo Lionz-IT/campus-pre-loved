@@ -102,7 +102,7 @@ export async function checkCanReviewAction(
   const [{ data: product }, { data: existingReview }] = await Promise.all([
     supabase
       .from('products')
-      .select('status, booked_by')
+      .select('status')
       .eq('id', productId)
       .single(),
     supabase

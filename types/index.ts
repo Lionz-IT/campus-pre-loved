@@ -66,7 +66,7 @@ export interface OfferRejectPayload {
 
 
 export interface SystemMessagePayload {
-  event: 'status_changed' | 'booking_cancelled' | 'item_sold'
+  event: 'status_changed' | 'sale_reverted' | 'item_sold'
   from?: ProductStatus
   to?:   ProductStatus
 }
