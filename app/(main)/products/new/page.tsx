@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { createProductAction } from '@/actions/product.actions'
+import { createProductAction } from '@/features/products/actions'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS, CAMPUS_COD_LOCATIONS } from '@/lib/constants/pens'
 import { ROUTES } from '@/lib/constants/routes'
 import SubmitButton from '@/components/ui/SubmitButton'
@@ -18,7 +18,7 @@ export default async function NewProductPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Jual Barang</h1>
-        <p className="text-gray-500 text-sm mt-1">Isi detail barang yang ingin kamu jual atau barter</p>
+        <p className="text-gray-500 text-sm mt-1">Isi detail barang yang ingin kamu jual</p>
       </div>
 
       <form action={async (formData: FormData) => {
@@ -36,25 +36,10 @@ export default async function NewProductPage() {
           placeholder="Contoh: Arduino Uno R3 Bekas Pakai Normal"
         />
 
-        <div>
-          <p className="block text-gray-700 text-sm font-medium mb-1.5">Tipe Transaksi <span className="text-red-500">*</span></p>
-          <div className="flex gap-3">
-            {[{ value: 'sell', label: 'Dijual' }, { value: 'barter', label: 'Barter' }].map((t) => (
-              <label key={t.value} className="flex-1 cursor-pointer">
-                <input type="radio" name="listing_type" value={t.value} defaultChecked={t.value === 'sell'} className="sr-only peer" />
-                <div className="text-center py-3 rounded-xl border border-gray-200 bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 text-gray-500 transition-all text-sm font-medium">
-                  {t.value === 'sell' ? 'Rp' : '⇄'} {t.label}
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
         <InputField
           id="price" name="price" type="number" min={0}
           label="Harga (Rp)"
           placeholder="Contoh: 85000"
-          hint="Kosongkan untuk barter"
         />
 
         <SelectField id="category" name="category" required label="Kategori">
@@ -104,3 +89,4 @@ export default async function NewProductPage() {
     </div>
   )
 }
+

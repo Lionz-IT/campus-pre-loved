@@ -26,8 +26,8 @@ export default async function MyProfilePage() {
       .order('created_at', { ascending: false }),
   ])
 
-  const profile = profileData as Profile | null
-  const listings = (productsData ?? []) as any[]
+  const profile = profileData
+  const listings = productsData ?? []
   const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Pengguna'
 
   return (
@@ -132,11 +132,11 @@ export default async function MyProfilePage() {
                 id={product.id}
                 title={product.title}
                 price={product.price}
-                listingType={product.listing_type}
                 imageUrl={product.image_urls?.[0]}
                 sellerName={user.id}
                 timeAgo={formatRelativeTime(product.created_at)}
                 status={product.status}
+                isNegotiable={product.is_negotiable}
               />
           ))}
 

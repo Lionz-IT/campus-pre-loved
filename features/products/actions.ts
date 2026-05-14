@@ -54,8 +54,8 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
     .from('products')
     .insert({
       ...parsed.data,
-      seller_id:  user.id,
-      image_urls: imageUrls,
+      seller_id:    user.id,
+      image_urls:   imageUrls,
     })
     .select('id')
     .single()

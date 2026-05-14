@@ -20,7 +20,6 @@ export type MessageInsert = Database['public']['Tables']['messages']['Insert']
 export type ProductStatus   = Database['public']['Enums']['product_status']
 export type ProductCategory = Database['public']['Enums']['product_category']
 export type MessageType     = Database['public']['Enums']['message_type']
-export type ListingType     = Database['public']['Enums']['listing_type']
 
 
 

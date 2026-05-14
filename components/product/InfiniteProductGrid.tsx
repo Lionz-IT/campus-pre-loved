@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { getMarketplaceFeedAction } from '@/actions/product.actions'
+import { getMarketplaceFeedAction } from '@/features/products/actions'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/Card'
 import type { ProductWithSeller } from '@/types'
@@ -76,11 +76,11 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
             id={product.id}
             title={product.title}
             price={product.price}
-            listingType={product.listing_type}
             imageUrl={product.image_urls[0]}
             sellerName={product.seller.full_name}
             timeAgo={formatRelativeTime(product.created_at)}
             status={product.status}
+            isNegotiable={product.is_negotiable}
           />
         ))}
       </div>
@@ -101,3 +101,4 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
     </>
   )
 }
+

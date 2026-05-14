@@ -2,10 +2,10 @@ import { cache, Suspense } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { createChatRoomAction } from '@/actions/chat.actions'
-import { markAsSoldAction, revertSoldAction } from '@/actions/product.actions'
-import { checkWishlistAction } from '@/actions/wishlist.actions'
-import { getProductReviewsAction, checkCanReviewAction } from '@/actions/review.actions'
+import { createChatRoomAction } from '@/features/chats/actions'
+import { markAsSoldAction, revertSoldAction } from '@/features/products/actions'
+import { checkWishlistAction } from '@/features/wishlists/actions'
+import { getProductReviewsAction, checkCanReviewAction } from '@/features/reviews/actions'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import { PRODUCT_CONDITIONS, PRODUCT_STATUS_LABELS } from '@/lib/constants/pens'
 import { ROUTES } from '@/lib/constants/routes'
@@ -167,9 +167,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant={statusBadgeVariant}>{statusInfo.label}</Badge>
-              <Badge variant={product.listing_type === 'barter' ? 'amber' : 'blue'}>
-                {product.listing_type === 'barter' ? 'Barter' : 'Dijual'}
-              </Badge>
+              {product.is_negotiable && (
+                <Badge variant="amber">Nego</Badge>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {isLoggedIn && (
@@ -184,7 +184,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <h1 className="text-2xl font-bold text-gray-900 leading-tight">{product.title}</h1>
 
           <p className="text-3xl font-bold text-blue-600">
-            {product.listing_type === 'barter' ? 'Barter' : formatPrice(product.price)}
+            {formatPrice(product.price)}
             {product.is_negotiable && <span className="text-sm text-gray-400 font-normal ml-2">(Nego)</span>}
           </p>
 

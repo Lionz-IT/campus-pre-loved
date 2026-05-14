@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { getMyChatsAction } from '@/actions/chat.actions'
+import { getMyChatsAction } from '@/features/chats/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import ChatsSidebar from '@/components/chat/sidebar/ChatsSidebar'
 
@@ -32,3 +32,4 @@ export default async function ChatsPage() {
     </>
   )
 }
+

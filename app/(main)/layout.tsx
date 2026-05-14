@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ROUTES } from '@/lib/constants/routes'
-import { getUnreadCountAction } from '@/actions/chat.actions'
+import { getUnreadCountAction } from '@/features/chats/actions'
 import GSAPAnimations from '@/components/layout/GSAPAnimations'
 import NextTopLoader from 'nextjs-toploader'
 import Link from 'next/link'
@@ -137,3 +137,4 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     </div>
   )
 }
+

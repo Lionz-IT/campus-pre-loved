@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { toggleWishlistAction } from '@/actions/wishlist.actions'
+import { toggleWishlistAction } from '@/features/wishlists/actions'
 
 interface WishlistButtonProps {
   productId: string
@@ -53,3 +53,4 @@ export default function WishlistButton({ productId, initialWishlisted, size = 'm
     </button>
   )
 }
+

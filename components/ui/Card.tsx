@@ -38,14 +38,14 @@ interface ProductCardProps {
   id: string
   title: string
   price: number | null
-  listingType: string
   imageUrl?: string
   sellerName: string
   timeAgo: string
   status?: ProductStatus
+  isNegotiable?: boolean
 }
 
-export function ProductCard({ id, title, price, listingType, imageUrl, sellerName, timeAgo, status = 'available' }: ProductCardProps) {
+export function ProductCard({ id, title, price, imageUrl, sellerName, timeAgo, status = 'available', isNegotiable = true }: ProductCardProps) {
   const statusConfig = STATUS_CONFIG[status]
   const isSold = status === 'sold'
 
@@ -85,9 +85,11 @@ export function ProductCard({ id, title, price, listingType, imageUrl, sellerNam
             {statusConfig.label}
           </span>
         )}
-        <span className="absolute top-2 right-2 bg-amber-400 text-amber-950 text-xs font-bold px-2.5 py-1 rounded-sm shadow-sm">
-          {listingType === 'barter' ? 'BARTER' : 'NEGO'}
-        </span>
+        {isNegotiable && (
+          <span className="absolute top-2 right-2 bg-amber-400 text-amber-950 text-xs font-bold px-2.5 py-1 rounded-sm shadow-sm">
+            NEGO
+          </span>
+        )}
       </div>
       <div className="p-4 flex-1 flex flex-col justify-between">
         <div>
@@ -95,7 +97,7 @@ export function ProductCard({ id, title, price, listingType, imageUrl, sellerNam
             {title}
           </p>
           <p className={cn('font-extrabold text-xl mb-2', isSold ? 'text-gray-400 line-through' : 'text-amber-500')}>
-            {listingType === 'barter' ? 'Barter' : formatPrice(price)}
+            {formatPrice(price)}
           </p>
           <div className="flex items-center text-[var(--text-secondary)] mb-4">
             <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

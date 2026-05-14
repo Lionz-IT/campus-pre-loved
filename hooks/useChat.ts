@@ -1,15 +1,20 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useOptimistic } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { sendMessageAction, markMessagesReadAction } from '@/actions/chat.actions'
+import { sendMessageAction, markMessagesReadAction } from '@/features/chats/actions'
 import type { Message, MessageWithSender } from '@/types'
 
-export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
+export function useChat(chatId: string, initialMessages: MessageWithSender[], currentUserId?: string) {
   const [messages, setMessages]   = useState<MessageWithSender[]>(initialMessages)
   const [isSending, setIsSending] = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const bottomRef                 = useRef<HTMLDivElement>(null)
+
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
+    messages,
+    (state: MessageWithSender[], newMessage: MessageWithSender) => [...state, newMessage]
+  )
 
   // Tandai pesan sudah dibaca saat komponen di-mount
   useEffect(() => {
@@ -18,8 +23,7 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
+  }, [optimisticMessages])
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
@@ -49,7 +53,6 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
           }
 
           setMessages((prev) => {
-
             if (prev.some((m) => m.id === newMessage.id)) return prev
             return [...prev, newMessage]
           })
@@ -62,18 +65,31 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
     }
   }, [chatId])
 
-
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!content.trim() || isSending) return
-      setIsSending(true)
+      if (!content.trim()) return
       setError(null)
+      
+      if (currentUserId) {
+        const tempId = crypto.randomUUID()
+        addOptimisticMessage({
+          id: tempId,
+          chat_id: chatId,
+          sender_id: currentUserId,
+          message_type: 'text',
+          content,
+          payload: null,
+          is_read: false,
+          created_at: new Date().toISOString(),
+          sender: { id: currentUserId, full_name: 'Me', avatar_url: null }
+        })
+      }
 
+      setIsSending(true)
       const result = await sendMessageAction(chatId, content)
       if (!result.success) {
         setError(result.error)
       } else if (result.data) {
-        // Optimistic update agar langsung muncul tanpa tunggu event socket
         setMessages((prev) => {
           if (prev.some((m) => m.id === result.data!.id)) return prev
           return [...prev, result.data!]
@@ -82,8 +98,9 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
 
       setIsSending(false)
     },
-    [chatId, isSending],
+    [chatId, currentUserId, addOptimisticMessage],
   )
 
-  return { messages, sendMessage, isSending, error, bottomRef }
+  return { messages: optimisticMessages, sendMessage, isSending, error, bottomRef }
 }
+

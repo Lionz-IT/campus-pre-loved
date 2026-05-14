@@ -1,60 +1,45 @@
 import { z } from 'zod'
 
-export const productSchema = z
-  .object({
-    title: z
-      .string({ error: 'Judul produk wajib diisi' })
-      .min(3, 'Judul minimal 3 karakter')
-      .max(120, 'Judul maksimal 120 karakter'),
+export const productSchema = z.object({
+  title: z
+    .string({ error: 'Judul produk wajib diisi' })
+    .min(3, 'Judul minimal 3 karakter')
+    .max(120, 'Judul maksimal 120 karakter'),
 
-    description: z
-      .string()
-      .max(2000, 'Deskripsi maksimal 2000 karakter')
-      .optional(),
+  description: z
+    .string()
+    .max(2000, 'Deskripsi maksimal 2000 karakter')
+    .optional(),
 
-    price: z.coerce
-      .number({ error: 'Harga harus berupa angka' })
-      .int('Harga harus bilangan bulat')
-      .positive('Harga harus lebih dari 0')
-      .optional(),
+  price: z.coerce
+    .number({ error: 'Harga harus berupa angka' })
+    .int('Harga harus bilangan bulat')
+    .positive('Harga harus lebih dari 0')
+    .optional(),
 
-    listing_type: z.enum(['sell', 'barter'], {
-      error: 'Tipe listing wajib dipilih',
-    }),
+  category: z.enum(
+    [
+      'microcontroller',
+      'electronic_component',
+      'module',
+      'tool',
+      'book_module',
+      'laptop_accessory',
+      'clothing',
+      'stationery',
+      'other',
+    ],
+    { error: 'Kategori wajib dipilih' },
+  ),
 
-    category: z.enum(
-      [
-        'microcontroller',
-        'electronic_component',
-        'module',
-        'tool',
-        'book_module',
-        'laptop_accessory',
-        'clothing',
-        'stationery',
-        'other',
-      ],
-      { error: 'Kategori wajib dipilih' },
-    ),
+  condition: z.enum(['new', 'like_new', 'good', 'fair', 'poor'], {
+    error: 'Kondisi barang wajib dipilih',
+  }),
 
-    condition: z.enum(['new', 'like_new', 'good', 'fair', 'poor'], {
-      error: 'Kondisi barang wajib dipilih',
-    }),
+  campus_location: z.string().optional(),
 
-    campus_location: z.string().optional(),
-
-    is_negotiable: z.boolean().default(true),
-  })
-  .refine(
-    (data) => {
-      if (data.listing_type === 'sell') return data.price !== undefined && data.price > 0
-      return true
-    },
-    {
-      message: 'Harga wajib diisi untuk tipe jual',
-      path: ['price'],
-    },
-  )
+  is_negotiable: z.boolean().default(true),
+})
 
 export const offerSchema = z.object({
   offered_price: z.coerce

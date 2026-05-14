@@ -16,9 +16,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'message_type') THEN
     CREATE TYPE message_type AS ENUM ('text', 'offer', 'offer_accept', 'offer_reject', 'system');
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listing_type') THEN
-    CREATE TYPE listing_type AS ENUM ('sell', 'barter');
-  END IF;
+
 END $$;
 
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -45,11 +43,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   seller_id       UUID              NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   title           TEXT              NOT NULL CHECK (char_length(title) BETWEEN 3 AND 120),
   description     TEXT              CHECK (char_length(description) <= 2000),
-  price           INT               CHECK (
-                                      (listing_type = 'barter' AND price IS NULL)
-                                      OR (listing_type = 'sell' AND price > 0)
-                                    ),
-  listing_type    listing_type      NOT NULL DEFAULT 'sell',
+  price           INT               CHECK (price IS NULL OR price > 0),
   category        product_category  NOT NULL,
   condition       TEXT              NOT NULL DEFAULT 'good'
                                       CHECK (condition IN ('new','like_new','good','fair','poor')),
@@ -272,7 +266,7 @@ END $$;
 
 CREATE OR REPLACE VIEW public.v_marketplace_feed AS
 SELECT
-  p.id, p.title, p.price, p.listing_type,
+  p.id, p.title, p.price,
   p.category, p.condition, p.status,
   p.image_urls, p.is_negotiable, p.campus_location, p.created_at,
   pr.full_name  AS seller_name,

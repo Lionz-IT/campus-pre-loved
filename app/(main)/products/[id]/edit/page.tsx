@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { updateProductAction, deleteProductAction, toggleProductStatusAction } from '@/actions/product.actions'
+import { updateProductAction, deleteProductAction, toggleProductStatusAction } from '@/features/products/actions'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS, CAMPUS_COD_LOCATIONS } from '@/lib/constants/pens'
 import { ROUTES } from '@/lib/constants/routes'
 import type { Product } from '@/types'
@@ -11,8 +11,7 @@ import { InputField, TextareaField, SelectField } from '@/components/ui/Input'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const supabase = await createSupabaseServerClient()
-  const { data: rawData } = await supabase.from('products').select('title').eq('id', id).single()
-  const data = rawData as { title: string } | null
+  const { data } = await supabase.from('products').select('title').eq('id', id).single()
   return {
     title: data?.title ? `Edit: ${data.title}` : 'Edit Produk',
   }
@@ -60,26 +59,11 @@ export default async function ProductEditPage({ params }: { params: Promise<{ id
           placeholder="Contoh: Arduino Uno R3 Bekas Pakai Normal"
         />
 
-        <div>
-          <p className="block text-gray-700 text-sm font-medium mb-1.5">Tipe Transaksi <span className="text-red-500">*</span></p>
-          <div className="flex gap-3">
-            {[{ value: 'sell', label: 'Dijual' }, { value: 'barter', label: 'Barter' }].map((t) => (
-              <label key={t.value} className="flex-1 cursor-pointer">
-                <input type="radio" name="listing_type" value={t.value} defaultChecked={product.listing_type === t.value} className="sr-only peer" />
-                <div className="text-center py-3 rounded-xl border border-gray-200 bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-600 text-gray-500 transition-all text-sm font-medium">
-                  {t.value === 'sell' ? 'Rp' : '⇄'} {t.label}
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
-
         <InputField
           id="price" name="price" type="number" min={0}
           label="Harga (Rp)"
           defaultValue={product.price ?? ''}
           placeholder="Contoh: 85000"
-          hint="Kosongkan untuk barter"
         />
 
         <SelectField id="category" name="category" required label="Kategori" defaultValue={product.category}>

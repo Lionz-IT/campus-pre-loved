@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { getChatMessagesAction } from '@/actions/chat.actions'
+import { getChatMessagesAction } from '@/features/chats/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import Badge from '@/components/ui/Badge'
 

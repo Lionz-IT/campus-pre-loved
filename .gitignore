@@ -42,5 +42,3 @@ next-env.d.ts
 
 #database
 db.sql
-# OpenCode/Agent Knowledge Base
-AGENTS.md

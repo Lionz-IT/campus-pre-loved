@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { useChat } from '@/hooks/useChat'
-import { sendOfferAction, acceptOfferAction, rejectOfferAction } from '@/actions/chat.actions'
+import { sendOfferAction, acceptOfferAction, rejectOfferAction } from '@/features/chats/actions'
 import { formatPrice, formatRelativeTime, getInitials } from '@/lib/utils'
 import type { MessageWithSender, Product, OfferPayload, OfferAcceptPayload, OfferRejectPayload } from '@/types'
 import Button from '@/components/ui/Button'
@@ -21,7 +21,7 @@ interface ChatRoomProps {
 }
 
 export default function ChatRoom({ chatId, initialMessages, currentUserId, isSeller, product, otherPerson }: ChatRoomProps) {
-  const { messages, sendMessage, isSending, error, bottomRef } = useChat(chatId, initialMessages)
+  const { messages, sendMessage, isSending, error, bottomRef } = useChat(chatId, initialMessages, currentUserId)
   const [inputText, setInputText]         = useState('')
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [offerPrice, setOfferPrice]        = useState('')
@@ -122,9 +122,22 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
            <span className="text-xs font-medium text-gray-500 bg-white border border-gray-200 px-3 py-1 rounded-full shadow-sm">Hari Ini</span>
         </div>
         
-        {messages.map((msg) => {
+        {messages.map((msg, index) => {
            let showAvatar = true;
-           // TODO: Add grouping logic if needed
+           
+           if (index > 0 && msg.sender_id !== currentUserId) {
+             const prevMsg = messages[index - 1];
+             const isSameSender = prevMsg.sender_id === msg.sender_id;
+             const timeDiffMs = new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime();
+             const isWithin5Mins = timeDiffMs < 5 * 60 * 1000;
+             
+             const isPrevNormal = prevMsg.message_type === 'text';
+             const isCurrentNormal = msg.message_type === 'text';
+
+             if (isSameSender && isWithin5Mins && isPrevNormal && isCurrentNormal) {
+               showAvatar = false;
+             }
+           }
            
            return (
              <MessageBubble 
@@ -404,3 +417,4 @@ function MessageBubble({ message, isOwn, isSeller, chatId, otherPerson, showAvat
     </div>
   )
 }
+

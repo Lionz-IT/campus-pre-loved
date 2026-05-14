@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { updateProfileAction } from '@/actions/auth.actions'
+import { updateProfileAction } from '@/features/auth/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types'
@@ -90,3 +90,4 @@ export default async function ProfileSettingsPage() {
     </div>
   )
 }
+

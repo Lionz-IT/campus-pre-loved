@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { getMarketplaceFeedAction } from '@/actions/product.actions'
+import { getMarketplaceFeedAction } from '@/features/products/actions'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '@/lib/constants/pens'
 import EmptyState from '@/components/ui/EmptyState'
 import { ProductCard } from '@/components/ui/Card'
@@ -139,10 +139,10 @@ export default async function ProductsBrowsePage({
                     id={product.id}
                     title={product.title}
                     price={product.price}
-                    listingType={product.listing_type}
                     imageUrl={product.image_urls?.[0]}
-                    sellerName={product.seller_id} // Should join with users
+                    sellerName={product.seller_id}
                     timeAgo={formatRelativeTime(product.created_at)}
+                    isNegotiable={product.is_negotiable}
                   />
                 ))}
               </div>
@@ -175,4 +175,5 @@ export default async function ProductsBrowsePage({
     </div>
   )
 }
+
 

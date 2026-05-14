@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { registerAction } from '@/actions/auth.actions'
+import { registerAction } from '@/features/auth/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
@@ -90,3 +90,4 @@ export default function RegisterPage() {
     </div>
   )
 }
+

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createReviewAction } from '@/actions/review.actions'
+import { createReviewAction } from '@/features/reviews/actions'
 import StarRating from '@/components/ui/StarRating'
 import Button from '@/components/ui/Button'
 import { toast } from 'sonner'
@@ -72,3 +72,4 @@ export default function ReviewForm({ productId, sellerId, onReviewSubmitted }: R
     </form>
   )
 }
+

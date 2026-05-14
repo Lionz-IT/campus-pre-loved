@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 
 export function formatPrice(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return 'Harga Barter'
+  if (amount === null || amount === undefined) return 'Nego'
   return new Intl.NumberFormat('id-ID', {
     style:    'currency',
     currency: 'IDR',

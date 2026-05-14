@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { ROUTES } from '@/lib/constants/routes'
 import { PRODUCT_STATUS_LABELS } from '@/lib/constants/pens'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
-import { getSellerReviewsAction } from '@/actions/review.actions'
+import { getSellerReviewsAction } from '@/features/reviews/actions'
 import type { Product, Profile } from '@/types'
 import Avatar from '@/components/ui/Avatar'
 import Badge from '@/components/ui/Badge'
@@ -138,7 +138,7 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
                     <Badge variant={badgeVariant}>{status.label}</Badge>
                     <p className="text-gray-900 font-medium text-sm line-clamp-2 leading-snug">{product.title}</p>
                     <p className="text-blue-600 font-bold text-base">
-                      {product.listing_type === 'barter' ? 'Barter' : formatPrice(product.price)}
+                      {formatPrice(product.price)}
                     </p>
                     <p className="text-gray-400 text-xs">{formatRelativeTime(product.created_at)}</p>
                   </div>
