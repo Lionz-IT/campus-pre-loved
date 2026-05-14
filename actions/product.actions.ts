@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { productSchema } from '@/lib/validations/product.schema'
 import { generateStorageFileName } from '@/lib/utils'
 import { ROUTES } from '@/lib/constants/routes'
-import type { ActionResult, ProductWithSeller } from '@/types'
+import type { ActionResult } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -213,6 +213,13 @@ import type { Database } from '@/types/database.types'
 
 type ProductCategory = Database['public']['Enums']['product_category']
 
+const PRODUCT_WITH_SELLER_SELECT = `
+  *,
+  seller:profiles!products_seller_id_fkey!inner (
+    id, full_name, avatar_url, rating, whatsapp_number
+  )
+` as const
+
 export async function getMarketplaceFeedAction(params?: {
   category?:  string
   search?:    string
@@ -220,7 +227,7 @@ export async function getMarketplaceFeedAction(params?: {
   condition?: string
   page?:      number
   limit?:     number
-}): Promise<ActionResult<ProductWithSeller[]>> {
+}) {
   const supabase = await createSupabaseServerClient()
   const { category, search, sort, condition, page = 1, limit = 20 } = params ?? {}
   const from = (page - 1) * limit
@@ -228,12 +235,7 @@ export async function getMarketplaceFeedAction(params?: {
 
   let query = supabase
     .from('products')
-    .select(`
-      *,
-      seller:profiles!products_seller_id_fkey (
-        id, full_name, avatar_url, rating, whatsapp_number
-      )
-    `)
+    .select(PRODUCT_WITH_SELLER_SELECT)
     .eq('status', 'available')
     .eq('is_deleted', false)
     .range(from, to)
@@ -258,5 +260,5 @@ export async function getMarketplaceFeedAction(params?: {
 
   const { data, error } = await query
   if (error) return { success: false, error: error.message }
-  return { success: true, data: data as ProductWithSeller[] }
+  return { success: true, data: data ?? [] }
 }

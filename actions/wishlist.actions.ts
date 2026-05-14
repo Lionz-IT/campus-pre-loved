@@ -3,7 +3,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ROUTES } from '@/lib/constants/routes'
-import type { ActionResult, WishlistProduct } from '@/types'
+import type { ActionResult } from '@/types'
 
 
 export async function toggleWishlistAction(productId: string): Promise<ActionResult<{ wishlisted: boolean }>> {
@@ -56,30 +56,28 @@ export async function checkWishlistAction(productId: string): Promise<ActionResu
 }
 
 
-export async function getWishlistAction(): Promise<ActionResult<WishlistProduct[]>> {
+export async function getWishlistAction() {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
+  if (!user) return { success: false as const, error: 'Kamu harus login terlebih dahulu' }
 
   const { data, error } = await supabase
     .from('wishlists')
     .select(`
       product_id,
-      products:product_id (
+      products:product_id!inner (
         *,
-        seller:profiles!products_seller_id_fkey (id, full_name, avatar_url)
+        seller:profiles!products_seller_id_fkey!inner (id, full_name, avatar_url)
       )
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  if (error) return { success: false, error: error.message }
+  if (error) return { success: false as const, error: error.message }
 
-  const products = (data ?? [])
-    .map((w: Record<string, unknown>) => w.products)
-    .filter(Boolean) as WishlistProduct[]
+  const products = (data ?? []).map((w) => w.products)
 
-  return { success: true, data: products }
+  return { success: true as const, data: products }
 }
 
 

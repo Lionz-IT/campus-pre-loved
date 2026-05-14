@@ -3,7 +3,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { ROUTES } from '@/lib/constants/routes'
-import type { ActionResult, ReviewWithReviewer, ReviewWithProduct } from '@/types'
+import type { ActionResult } from '@/types'
 
 
 export async function createReviewAction(
@@ -52,38 +52,38 @@ export async function createReviewAction(
 }
 
 
-export async function getProductReviewsAction(productId: string): Promise<ActionResult<ReviewWithReviewer[]>> {
+export async function getProductReviewsAction(productId: string) {
   const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from('reviews')
     .select(`
       *,
-      reviewer:profiles!reviews_reviewer_id_fkey (id, full_name, avatar_url)
+      reviewer:profiles!reviews_reviewer_id_fkey!inner (id, full_name, avatar_url)
     `)
     .eq('product_id', productId)
     .order('created_at', { ascending: false })
 
-  if (error) return { success: false, error: error.message }
-  return { success: true, data: (data ?? []) as ReviewWithReviewer[] }
+  if (error) return { success: false as const, error: error.message }
+  return { success: true as const, data: data ?? [] }
 }
 
 
-export async function getSellerReviewsAction(sellerId: string): Promise<ActionResult<ReviewWithProduct[]>> {
+export async function getSellerReviewsAction(sellerId: string) {
   const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from('reviews')
     .select(`
       *,
-      product:products!reviews_product_id_fkey (id, title, image_urls),
-      reviewer:profiles!reviews_reviewer_id_fkey (id, full_name, avatar_url)
+      product:products!reviews_product_id_fkey!inner (id, title, image_urls),
+      reviewer:profiles!reviews_reviewer_id_fkey!inner (id, full_name, avatar_url)
     `)
     .eq('seller_id', sellerId)
     .order('created_at', { ascending: false })
 
-  if (error) return { success: false, error: error.message }
-  return { success: true, data: (data ?? []) as ReviewWithProduct[] }
+  if (error) return { success: false as const, error: error.message }
+  return { success: true as const, data: data ?? [] }
 }
 
 

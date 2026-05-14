@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { sendMessageAction, markMessagesReadAction } from '@/actions/chat.actions'
-import type { MessageWithSender } from '@/types'
+import type { Message, MessageWithSender } from '@/types'
 
 export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
   const [messages, setMessages]   = useState<MessageWithSender[]>(initialMessages)
@@ -35,16 +35,17 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[]) {
           filter: `chat_id=eq.${chatId}`,
         },
         async (payload) => {
+          const rawMessage = payload.new as Message
 
           const { data: sender } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
-            .eq('id', payload.new.sender_id)
+            .eq('id', rawMessage.sender_id)
             .single()
 
           const newMessage: MessageWithSender = {
-            ...(payload.new as MessageWithSender),
-            sender: sender ?? { id: payload.new.sender_id, full_name: 'Unknown', avatar_url: null },
+            ...rawMessage,
+            sender: sender ?? { id: rawMessage.sender_id, full_name: 'Unknown', avatar_url: null },
           }
 
           setMessages((prev) => {

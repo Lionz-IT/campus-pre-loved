@@ -2,7 +2,7 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { offerSchema, offerAcceptSchema, offerRejectSchema } from '@/lib/validations/product.schema'
-import type { ActionResult, ChatWithDetails, MessageWithSender } from '@/types'
+import type { ActionResult } from '@/types'
 import { ROUTES } from '@/lib/constants/routes'
 import { revalidatePath } from 'next/cache'
 
@@ -31,55 +31,50 @@ export async function createChatRoomAction(
 }
 
 
-export async function getMyChatsAction(): Promise<ActionResult<ChatWithDetails[]>> {
+export async function getMyChatsAction() {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Unauthorized' }
+  if (!user) return { success: false as const, error: 'Unauthorized' }
 
   const { data, error } = await supabase
     .from('chats')
     .select(`
       *,
-      product:products!chats_product_id_fkey ( id, title, image_urls, status ),
-      buyer:profiles!chats_buyer_id_fkey     ( id, full_name, avatar_url ),
-      seller:profiles!chats_seller_id_fkey   ( id, full_name, avatar_url )
+      product:products!chats_product_id_fkey!inner ( id, title, image_urls, status ),
+      buyer:profiles!chats_buyer_id_fkey!inner     ( id, full_name, avatar_url ),
+      seller:profiles!chats_seller_id_fkey!inner   ( id, full_name, avatar_url )
     `)
     .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
     .order('last_message_at', { ascending: false, nullsFirst: false })
 
-  if (error) return { success: false, error: error.message }
-  return { success: true, data: data as ChatWithDetails[] }
+  if (error) return { success: false as const, error: error.message }
+  return { success: true as const, data: data ?? [] }
 }
 
 
-export async function getChatMessagesAction(
-  chatId: string,
-): Promise<ActionResult<MessageWithSender[]>> {
+export async function getChatMessagesAction(chatId: string) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Unauthorized' }
+  if (!user) return { success: false as const, error: 'Unauthorized' }
 
   const { data, error } = await supabase
     .from('messages')
     .select(`
       *,
-      sender:profiles!messages_sender_id_fkey ( id, full_name, avatar_url )
+      sender:profiles!messages_sender_id_fkey!inner ( id, full_name, avatar_url )
     `)
     .eq('chat_id', chatId)
     .order('created_at', { ascending: true })
 
-  if (error) return { success: false, error: error.message }
-  return { success: true, data: data as MessageWithSender[] }
+  if (error) return { success: false as const, error: error.message }
+  return { success: true as const, data: data ?? [] }
 }
 
 
-export async function sendMessageAction(
-  chatId:  string,
-  content: string,
-): Promise<ActionResult<MessageWithSender>> {
+export async function sendMessageAction(chatId: string, content: string) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Unauthorized' }
+  if (!user) return { success: false as const, error: 'Unauthorized' }
 
   const { data, error } = await supabase.from('messages').insert({
     chat_id:      chatId,
@@ -88,13 +83,13 @@ export async function sendMessageAction(
     content:      content.trim(),
   }).select(`
     *,
-    sender:profiles!messages_sender_id_fkey ( id, full_name, avatar_url )
+    sender:profiles!messages_sender_id_fkey!inner ( id, full_name, avatar_url )
   `).single()
 
-  if (error) return { success: false, error: error.message }
+  if (error) return { success: false as const, error: error.message }
   
   revalidatePath(ROUTES.CHAT_ROOM(chatId))
-  return { success: true, data: data as MessageWithSender }
+  return { success: true as const, data }
 }
 
 
