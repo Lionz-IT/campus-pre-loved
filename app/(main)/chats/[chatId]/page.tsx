@@ -8,7 +8,7 @@ import { getChatMessagesAction } from '@/features/chats/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import Badge from '@/components/ui/Badge'
 
-const ChatRoom = dynamic(() => import('@/components/chat/ChatRoom'), {
+const ChatRoom = dynamic(() => import('@/features/chats/components/ChatRoom'), {
   loading: () => (
     <div className="flex-1 flex items-center justify-center">
       <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
