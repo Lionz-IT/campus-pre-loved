@@ -6,9 +6,10 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { formatRelativeTime } from '@/lib/utils'
 import { ROUTES } from '@/lib/constants/routes'
+import type { ChatWithDetails } from '@/types'
 
 interface ChatsSidebarProps {
-  chats: any[]
+  chats: ChatWithDetails[]
   userId: string
 }
 

@@ -1,14 +1,16 @@
 import type { Metadata } from 'next'
 import { getMarketplaceFeedAction } from '@/features/products/actions'
 import { PRODUCT_CATEGORIES } from '@/lib/constants/pens'
-import { formatPrice, formatRelativeTime } from '@/lib/utils'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
+
 import { ProductCard } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import CategoryIcon from '@/components/ui/CategoryIcon'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Campus Pre-loved | Marketplace Mahasiswa PENS',
-  description: 'Temukan barang bekas berkualitas dari sesama mahasiswa PENS — mikrokontroler, buku, laptop, dan lainnya.',
+  description: 'Temukan barang bekas berkualitas dari sesama mahasiswa PENS ?" mikrokontroler, buku, laptop, dan lainnya.',
 }
 
 export default async function HomePage({
@@ -17,7 +19,13 @@ export default async function HomePage({
   searchParams: Promise<{ category?: string; q?: string }>
 }) {
   const { category, q } = await searchParams
-  const result = await getMarketplaceFeedAction({ category, search: q, limit: 24 })
+  const supabase = await createSupabaseServerClient()
+  
+  const [result, { data: { user } }] = await Promise.all([
+    getMarketplaceFeedAction({ category, search: q, limit: 24 }),
+    supabase.auth.getUser()
+  ])
+  
   const products = result.success ? result.data ?? [] : []
 
   return (
@@ -39,12 +47,12 @@ export default async function HomePage({
               </span>
             </div>
             <div className="flex gap-4 flex-wrap">
-              <a
+              <Link
                 href="/products"
                 className="px-8 py-4 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-xl font-bold transition-colors text-base"
               >
                 Mulai Belanja
-              </a>
+              </Link>
             </div>
           </div>
           <div className="flex-1 w-full md:w-auto flex justify-center md:justify-end">
@@ -64,16 +72,16 @@ export default async function HomePage({
 
       <section className="animate-fade-in-up stagger-2">
         <div className="flex gap-3 flex-wrap">
-          <a
+          <Link
             href="/"
             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-colors duration-200 ${
               !category ? 'bg-[var(--foreground)] text-white' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--primary)] hover:text-[var(--primary)]'
             }`}
           >
             Semua
-          </a>
+          </Link>
           {PRODUCT_CATEGORIES.map((cat) => (
-            <a
+            <Link
               key={cat.value}
               href={`/?category=${cat.value}`}
               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-colors duration-200 flex items-center gap-2 ${
@@ -83,7 +91,7 @@ export default async function HomePage({
               }`}
             >
               <CategoryIcon name={cat.icon} className="w-4 h-4" /> {cat.label}
-            </a>
+            </Link>
           ))}
         </div>
       </section>
@@ -91,9 +99,9 @@ export default async function HomePage({
       <section>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[var(--primary)]">Penawaran Terbaru</h2>
-          <a href="/products" className="text-sm font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)] transition-colors">
+          <Link href="/products" className="text-sm font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)] transition-colors">
             Lihat Semua &rarr;
-          </a>
+          </Link>
         </div>
         {products.length === 0 ? (
           <EmptyState
@@ -105,9 +113,9 @@ export default async function HomePage({
             title="Belum ada produk di kategori ini"
             description="Jadilah yang pertama berjualan!"
             action={
-              <a href="/products/new" className="inline-flex px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-xl font-bold text-sm transition-colors">
+              <Link href="/products/new" className="inline-flex px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-xl font-bold text-sm transition-colors">
                 + Mulai Jual
-              </a>
+              </Link>
             }
           />
         ) : (
@@ -119,9 +127,8 @@ export default async function HomePage({
                 title={product.title}
                 price={product.price}
                 imageUrl={product.image_urls?.[0]}
-                sellerName={product.seller_id}
-                timeAgo={formatRelativeTime(product.created_at)}
                 isNegotiable={product.is_negotiable}
+                isOwner={user?.id === product.seller_id}
               />
               </div>
             ))}

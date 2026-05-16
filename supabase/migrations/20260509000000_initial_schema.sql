@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS public.products (
                                       CHECK (condition IN ('new','like_new','good','fair','poor')),
   status          product_status    NOT NULL DEFAULT 'available',
   image_urls      TEXT[]            NOT NULL DEFAULT '{}',
-  campus_location TEXT              DEFAULT 'PENS — Surabaya',
+  stock           INT               NOT NULL DEFAULT 1 CHECK (stock >= 0),
   is_negotiable   BOOLEAN           NOT NULL DEFAULT TRUE,
   is_deleted      BOOLEAN           NOT NULL DEFAULT FALSE,
   created_at      TIMESTAMPTZ       NOT NULL DEFAULT now(),
@@ -152,19 +152,19 @@ CREATE TRIGGER trg_on_new_message AFTER INSERT ON public.messages FOR EACH ROW E
 CREATE OR REPLACE FUNCTION public.fn_guard_product_status()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
-  IF OLD.status = NEW.status THEN RETURN NEW; END IF;
-  IF NOT (
-       (OLD.status = 'available' AND NEW.status = 'sold')
-    OR (OLD.status = 'sold'      AND NEW.status = 'available')
-  ) THEN
-    RAISE EXCEPTION 'Transisi status produk tidak valid: % → %', OLD.status, NEW.status;
+  -- Auto set status to 'sold' if stock hits 0, and back to 'available' if stock > 0
+  IF NEW.stock = 0 THEN
+    NEW.status = 'sold';
+  ELSIF NEW.stock > 0 THEN
+    NEW.status = 'available';
   END IF;
+  
   RETURN NEW;
 END;
 $$;
 
 DROP TRIGGER IF EXISTS trg_product_state_machine ON public.products;
-CREATE TRIGGER trg_product_state_machine BEFORE UPDATE OF status ON public.products FOR EACH ROW EXECUTE FUNCTION public.fn_guard_product_status();
+CREATE TRIGGER trg_product_state_machine BEFORE UPDATE OF stock ON public.products FOR EACH ROW EXECUTE FUNCTION public.fn_guard_product_status();
 
 CREATE OR REPLACE FUNCTION public.fn_update_seller_stats()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -267,8 +267,8 @@ END $$;
 CREATE OR REPLACE VIEW public.v_marketplace_feed AS
 SELECT
   p.id, p.title, p.price,
-  p.category, p.condition, p.status,
-  p.image_urls, p.is_negotiable, p.campus_location, p.created_at,
+  p.category, p.condition, p.status, p.stock,
+  p.image_urls, p.is_negotiable, p.created_at,
   pr.full_name  AS seller_name,
   pr.avatar_url AS seller_avatar,
   pr.rating     AS seller_rating

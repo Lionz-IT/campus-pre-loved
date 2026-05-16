@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { updateProductAction, deleteProductAction, toggleProductStatusAction } from '@/features/products/actions'
-import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS, CAMPUS_COD_LOCATIONS } from '@/lib/constants/pens'
+import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '@/lib/constants/pens'
 import { ROUTES } from '@/lib/constants/routes'
 import type { Product } from '@/types'
 import SubmitButton from '@/components/ui/SubmitButton'
@@ -66,6 +66,13 @@ export default async function ProductEditPage({ params }: { params: Promise<{ id
           placeholder="Contoh: 85000"
         />
 
+        <InputField
+          id="stock" name="stock" type="number" min={1}
+          label="Stok Barang"
+          defaultValue={product.stock}
+          placeholder="Contoh: 1"
+        />
+
         <SelectField id="category" name="category" required label="Kategori" defaultValue={product.category}>
           <option value="">-- Pilih Kategori --</option>
           {PRODUCT_CATEGORIES.map((cat) => (
@@ -85,12 +92,6 @@ export default async function ProductEditPage({ params }: { params: Promise<{ id
           defaultValue={product.description ?? ''}
           placeholder="Jelaskan kondisi, spesifikasi, atau catatan penting tentang barang..."
         />
-
-        <SelectField id="campus_location" name="campus_location" label="Titik COD" defaultValue={product.campus_location ?? ''}>
-          {CAMPUS_COD_LOCATIONS.map((loc) => (
-            <option key={loc} value={loc}>{loc}</option>
-          ))}
-        </SelectField>
 
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" name="is_negotiable" value="true" defaultChecked={product.is_negotiable} className="w-4 h-4 rounded accent-blue-600" />

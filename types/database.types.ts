@@ -60,6 +60,7 @@ export type Database = {
           status:          Database['public']['Enums']['product_status']
           booked_by:       string | null
           image_urls:      string[]
+          stock:           number
           campus_location: string | null
           is_negotiable:   boolean
           is_deleted:      boolean
@@ -75,6 +76,7 @@ export type Database = {
           price?:          number | null
           condition?:      string
           image_urls?:     string[]
+          stock?:          number
           campus_location?: string | null
           is_negotiable?:  boolean
         }
@@ -87,6 +89,7 @@ export type Database = {
           status?:         Database['public']['Enums']['product_status']
           booked_by?:      string | null
           image_urls?:     string[]
+          stock?:          number
           campus_location?: string | null
           is_negotiable?:  boolean
           is_deleted?:     boolean

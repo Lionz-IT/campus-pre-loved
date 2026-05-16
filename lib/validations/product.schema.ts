@@ -36,7 +36,11 @@ export const productSchema = z.object({
     error: 'Kondisi barang wajib dipilih',
   }),
 
-  campus_location: z.string().optional(),
+  stock: z.coerce
+    .number({ error: 'Stok harus berupa angka' })
+    .int('Stok harus bilangan bulat')
+    .min(1, 'Stok minimal 1')
+    .default(1),
 
   is_negotiable: z.boolean().default(true),
 })
@@ -54,8 +58,8 @@ export const offerSchema = z.object({
 
 export const offerAcceptSchema = z.object({
   agreed_price: z.coerce.number().int().positive(),
-  meet_point: z.string().min(1, 'Titik COD wajib diisi'),
-  meet_time: z.string().min(1, 'Waktu COD wajib diisi'),
+  meet_point: z.string().optional(),
+  meet_time: z.string().optional(),
 })
 
 export const offerRejectSchema = z.object({

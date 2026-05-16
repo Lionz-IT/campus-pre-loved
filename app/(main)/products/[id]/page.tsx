@@ -1,6 +1,7 @@
 import { cache, Suspense } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createChatRoomAction } from '@/features/chats/actions'
 import { markAsSoldAction, revertSoldAction } from '@/features/products/actions'
@@ -19,6 +20,7 @@ import WishlistButton from '@/components/ui/WishlistButton'
 import ReviewList from '@/components/product/ReviewList'
 import ReviewForm from '@/components/product/ReviewForm'
 import ImageCarousel from '@/components/ui/ImageCarousel'
+import type { ProductWithSeller } from '@/types'
 
 // 1. DEDUPLICATE QUERY: Cache database call to reuse between Metadata and Component
 const getProduct = cache(async (id: string) => {
@@ -47,17 +49,19 @@ async function WishlistToggle({ productId }: { productId: string }) {
   return <WishlistButton productId={productId} initialWishlisted={isWishlisted} size="sm" />
 }
 
+type ChatQueryResult = { data: { id: string } | null }
+
 // 3. ISOLATE REVIEWS AND ACTIONS (WATERFALL FIX)
-async function ProductInteractions({ product, user }: { product: any, user: any }) {
+async function ProductInteractions({ product, user }: { product: ProductWithSeller, user: User | null }) {
   const supabase = await createSupabaseServerClient()
   const isLoggedIn = !!user
   const isSeller   = user?.id === product.seller_id
 
-  let chatPromise: Promise<any> = Promise.resolve({ data: null })
+  let chatPromise: Promise<ChatQueryResult> = Promise.resolve({ data: null })
   
   if (isLoggedIn) {
     if (!isSeller) {
-      chatPromise = supabase.from('chats').select('id').eq('product_id', product.id).eq('buyer_id', user.id).maybeSingle() as any
+      chatPromise = supabase.from('chats').select('id').eq('product_id', product.id).eq('buyer_id', user!.id).maybeSingle() as unknown as Promise<ChatQueryResult>
     }
   }
 
@@ -92,28 +96,32 @@ async function ProductInteractions({ product, user }: { product: any, user: any 
         )}
 
         {isSeller && (
-          <div className="flex gap-3">
-            <a href={ROUTES.PRODUCT_EDIT(product.id)} className="flex-1">
+          <div className="flex flex-col gap-3">
+            <a href={ROUTES.PRODUCT_EDIT(product.id)} className="w-full">
               <Button variant="outline" fullWidth size="lg">
                 Edit Produk
               </Button>
             </a>
             {product.status === 'available' && existingChatId && (
-              <form action={async () => {
+              <form action={async (formData: FormData) => {
                 'use server'
-                await markAsSoldAction(product.id, existingChatId!)
-              }}>
-                <SubmitButton variant="accent" size="lg" pendingText="Memproses...">
+                const qty = Number(formData.get('quantity') || 1)
+                await markAsSoldAction(product.id, existingChatId!, qty)
+              }} className="flex gap-2">
+                <input type="number" name="quantity" min={1} max={product.stock} defaultValue={1} className="w-20 px-3 py-2 border rounded-xl" required />
+                <SubmitButton variant="accent" size="lg" pendingText="Memproses..." className="flex-1">
                   Tandai Terjual
                 </SubmitButton>
               </form>
             )}
             {product.status === 'sold' && existingChatId && (
-              <form action={async () => {
+              <form action={async (formData: FormData) => {
                 'use server'
-                await revertSoldAction(product.id, existingChatId!)
-              }}>
-                <SubmitButton variant="danger" size="lg" pendingText="Membatalkan...">
+                const qty = Number(formData.get('quantity') || 1)
+                await revertSoldAction(product.id, existingChatId!, qty)
+              }} className="flex gap-2">
+                 <input type="number" name="quantity" min={1} defaultValue={1} className="w-20 px-3 py-2 border rounded-xl" required />
+                <SubmitButton variant="danger" size="lg" pendingText="Membatalkan..." className="flex-1">
                   Batalkan Penjualan
                 </SubmitButton>
               </form>
@@ -192,10 +200,6 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             <Card className="!p-3">
               <p className="text-gray-400 text-xs mb-1">Kondisi</p>
               <p className="text-gray-900 text-sm font-medium">{conditionLabel?.label}</p>
-            </Card>
-            <Card className="!p-3">
-              <p className="text-gray-400 text-xs mb-1">Lokasi COD</p>
-              <p className="text-gray-900 text-sm font-medium">{product.campus_location}</p>
             </Card>
           </div>
 

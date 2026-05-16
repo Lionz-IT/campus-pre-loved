@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { ROUTES } from '@/lib/constants/routes'
-import { formatPrice, formatRelativeTime } from '@/lib/utils'
-import type { Product, Profile } from '@/types'
+
 import { ProductCard } from '@/components/ui/Card'
 
 export const metadata: Metadata = { title: 'Profil Saya' }
@@ -64,7 +63,7 @@ export default async function MyProfilePage() {
             </div>
             
             <p className="text-sm text-gray-500 font-medium">
-              {profile?.department || 'Universitas'} • Angkatan {profile?.nim ? '20' + profile.nim.substring(2, 4) : '2021'}
+              {profile?.department || 'Universitas'} � Angkatan {profile?.nim ? '20' + profile.nim.substring(2, 4) : '2021'}
             </p>
             
             <div className="flex items-center justify-center sm:justify-start gap-3 mt-4 pt-2">
@@ -133,8 +132,8 @@ export default async function MyProfilePage() {
                 title={product.title}
                 price={product.price}
                 imageUrl={product.image_urls?.[0]}
-                sellerName={user.id}
-                timeAgo={formatRelativeTime(product.created_at)}
+
+
                 status={product.status}
                 isNegotiable={product.is_negotiable}
                 isOwner={true}
@@ -158,3 +157,4 @@ export default async function MyProfilePage() {
     </div>
   )
 }
+

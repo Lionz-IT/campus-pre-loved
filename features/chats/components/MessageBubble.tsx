@@ -77,7 +77,7 @@ export default function MessageBubble({ message, isOwn, isSeller, chatId, otherP
           
           {(payload?.note || payload?.reason) && (
             <div className="px-1 mb-3">
-               <p className="text-gray-600 text-sm">"{payload?.note ?? payload?.reason}"</p>
+               <p className="text-gray-600 text-sm">&quot;{payload?.note ?? payload?.reason}&quot;</p>
             </div>
           )}
 

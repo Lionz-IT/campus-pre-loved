@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { getMarketplaceFeedAction } from '@/features/products/actions'
-import { formatPrice, formatRelativeTime } from '@/lib/utils'
+import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/Card'
 import type { ProductWithSeller } from '@/types'
 
@@ -24,11 +24,14 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
   const [isPending, startTransition] = useTransition()
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  // Sync state if initialProducts changes (e.g. filters applied)
+  const [prevInitial, setPrevInitial] = useState(initialProducts)
+  if (initialProducts !== prevInitial) {
+    setPrevInitial(initialProducts)
     setProducts(initialProducts)
     setPage(2)
     setHasMore(initialProducts.length >= pageSize)
-  }, [initialProducts, pageSize])
+  }
 
   const loadMore = useCallback(() => {
     if (isPending || !hasMore) return
@@ -77,8 +80,8 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
             title={product.title}
             price={product.price}
             imageUrl={product.image_urls[0]}
-            sellerName={product.seller.full_name}
-            timeAgo={formatRelativeTime(product.created_at)}
+
+
             status={product.status}
             isNegotiable={product.is_negotiable}
           />

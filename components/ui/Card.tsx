@@ -40,14 +40,12 @@ interface ProductCardProps {
   title: string
   price: number | null
   imageUrl?: string
-  sellerName: string
-  timeAgo: string
   status?: ProductStatus
   isNegotiable?: boolean
   isOwner?: boolean
 }
 
-export function ProductCard({ id, title, price, imageUrl, sellerName, timeAgo, status = 'available', isNegotiable = true, isOwner = false }: ProductCardProps) {
+export function ProductCard({ id, title, price, imageUrl, status = 'available', isNegotiable = true, isOwner = false }: ProductCardProps) {
   const statusConfig = STATUS_CONFIG[status]
   const isSold = status === 'sold'
   const router = useRouter()
@@ -99,16 +97,9 @@ export function ProductCard({ id, title, price, imageUrl, sellerName, timeAgo, s
           <p className="text-[var(--text-primary)] font-semibold text-[15px] line-clamp-2 leading-snug group-hover:text-[var(--primary-dark)] transition-colors mb-1">
             {title}
           </p>
-          <p className={cn('font-extrabold text-xl mb-2', isSold ? 'text-gray-400 line-through' : 'text-amber-500')}>
+          <p className={cn('font-extrabold text-xl mb-4', isSold ? 'text-gray-400 line-through' : 'text-amber-500')}>
             {formatPrice(price)}
           </p>
-          <div className="flex items-center text-[var(--text-secondary)] mb-4">
-            <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-xs truncate">Kantin PENS</span>
-          </div>
         </div>
         {isSold ? (
           <div className="flex items-center justify-center mt-auto w-full pt-2">

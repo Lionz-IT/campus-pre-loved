@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { createProductAction } from '@/features/products/actions'
-import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS, CAMPUS_COD_LOCATIONS } from '@/lib/constants/pens'
+import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '@/lib/constants/pens'
 import { ROUTES } from '@/lib/constants/routes'
 import SubmitButton from '@/components/ui/SubmitButton'
 import { InputField, TextareaField, SelectField } from '@/components/ui/Input'
@@ -42,6 +42,12 @@ export default async function NewProductPage() {
           placeholder="Contoh: 85000"
         />
 
+        <InputField
+          id="stock" name="stock" type="number" min={1} defaultValue={1}
+          label="Stok Barang"
+          placeholder="Contoh: 1"
+        />
+
         <SelectField id="category" name="category" required label="Kategori">
           <option value="">-- Pilih Kategori --</option>
           {PRODUCT_CATEGORIES.map((cat) => (
@@ -60,12 +66,6 @@ export default async function NewProductPage() {
           label="Deskripsi"
           placeholder="Jelaskan kondisi, spesifikasi, atau catatan penting tentang barang..."
         />
-
-        <SelectField id="campus_location" name="campus_location" label="Titik COD">
-          {CAMPUS_COD_LOCATIONS.map((loc) => (
-            <option key={loc} value={loc}>{loc}</option>
-          ))}
-        </SelectField>
 
         <div>
           <label className="block text-gray-700 text-sm font-medium mb-1.5">

@@ -120,18 +120,27 @@ export async function deleteProductAction(productId: string): Promise<ActionResu
 export async function markAsSoldAction(
   productId: string,
   chatId: string,
+  quantitySold: number = 1
 ): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Unauthorized' }
 
+  const { data: product, error: fetchError } = await supabase
+    .from('products')
+    .select('stock')
+    .eq('id', productId)
+    .eq('seller_id', user.id)
+    .single()
+    
+  if (fetchError || !product) return { success: false, error: 'Produk tidak ditemukan' }
+  if (product.stock < quantitySold) return { success: false, error: 'Stok tidak mencukupi' }
 
   const { error } = await supabase
     .from('products')
-    .update({ status: 'sold' })
+    .update({ stock: product.stock - quantitySold })
     .eq('id', productId)
     .eq('seller_id', user.id)
-    .eq('status', 'available')
 
   if (error) return { success: false, error: error.message }
 
@@ -139,8 +148,8 @@ export async function markAsSoldAction(
     chat_id:      chatId,
     sender_id:    user.id,
     message_type: 'system',
-    content:      'Transaksi selesai! Barang sudah terjual. Terima kasih!',
-    payload:      { event: 'item_sold', from: 'available', to: 'sold' },
+    content:      `Transaksi selesai! Barang sudah terjual (${quantitySold} item). Terima kasih!`,
+    payload:      { event: 'item_sold', from: 'available', to: 'sold', quantity: quantitySold },
   })
 
   revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
@@ -154,17 +163,26 @@ export async function markAsSoldAction(
 export async function revertSoldAction(
   productId: string,
   chatId: string,
+  quantityToReturn: number = 1
 ): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Unauthorized' }
+  
+  const { data: product, error: fetchError } = await supabase
+    .from('products')
+    .select('stock')
+    .eq('id', productId)
+    .eq('seller_id', user.id)
+    .single()
+    
+  if (fetchError || !product) return { success: false, error: 'Produk tidak ditemukan' }
 
   const { error } = await supabase
     .from('products')
-    .update({ status: 'available' })
+    .update({ stock: product.stock + quantityToReturn })
     .eq('id', productId)
     .eq('seller_id', user.id)
-    .eq('status', 'sold')
 
   if (error) return { success: false, error: error.message }
 
@@ -172,8 +190,8 @@ export async function revertSoldAction(
     chat_id:      chatId,
     sender_id:    user.id,
     message_type: 'system',
-    content:      'Penjualan dibatalkan. Barang kembali tersedia.',
-    payload:      { event: 'sale_reverted', from: 'sold', to: 'available' },
+    content:      `Penjualan dibatalkan. Barang (${quantityToReturn} item) kembali tersedia ke stok.`,
+    payload:      { event: 'sale_reverted', from: 'sold', to: 'available', quantity: quantityToReturn },
   })
 
   revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
@@ -225,11 +243,13 @@ export async function getMarketplaceFeedAction(params?: {
   search?:    string
   sort?:      string
   condition?: string
+  min_price?: string
+  max_price?: string
   page?:      number
   limit?:     number
 }) {
   const supabase = await createSupabaseServerClient()
-  const { category, search, sort, condition, page = 1, limit = 20 } = params ?? {}
+  const { category, search, sort, condition, min_price, max_price, page = 1, limit = 20 } = params ?? {}
   const from = (page - 1) * limit
   const to   = from + limit - 1
 
@@ -245,6 +265,12 @@ export async function getMarketplaceFeedAction(params?: {
   }
   if (condition && condition !== 'all') {
     query = query.eq('condition', condition)
+  }
+  if (min_price) {
+    query = query.gte('price', parseInt(min_price, 10))
+  }
+  if (max_price) {
+    query = query.lte('price', parseInt(max_price, 10))
   }
   if (search) {
     query = query.ilike('title', `%${search}%`)
