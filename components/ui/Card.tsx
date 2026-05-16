@@ -2,6 +2,7 @@
 
 import { cn, formatPrice } from '@/lib/utils'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
 
 interface CardProps {
@@ -43,11 +44,13 @@ interface ProductCardProps {
   timeAgo: string
   status?: ProductStatus
   isNegotiable?: boolean
+  isOwner?: boolean
 }
 
-export function ProductCard({ id, title, price, imageUrl, sellerName, timeAgo, status = 'available', isNegotiable = true }: ProductCardProps) {
+export function ProductCard({ id, title, price, imageUrl, sellerName, timeAgo, status = 'available', isNegotiable = true, isOwner = false }: ProductCardProps) {
   const statusConfig = STATUS_CONFIG[status]
   const isSold = status === 'sold'
+  const router = useRouter()
 
   return (
     <a
@@ -111,28 +114,38 @@ export function ProductCard({ id, title, price, imageUrl, sellerName, timeAgo, s
           <div className="flex items-center justify-center mt-auto w-full pt-2">
             <span className="text-xs font-semibold text-red-500">Barang sudah terjual</span>
           </div>
-        ) : (
-          <div className="flex gap-2 mt-auto w-full pt-2">
+        ) : isOwner ? (
+          <div className="mt-auto w-full pt-2 flex gap-2">
             <button 
               type="button"
-              className="flex-1 px-2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg transition-colors border border-gray-200"
+              className="w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2 border border-gray-200"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                router.push(`/products/${id}/edit`);
               }}
             >
-              Tawar Harga
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Edit Produk
             </button>
+          </div>
+        ) : (
+          <div className="mt-auto w-full pt-2">
             <button 
               type="button"
-              className="flex-1 px-2 py-2.5 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1"
+              className="w-full px-4 py-2.5 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                router.push(`/chats?productId=${id}`);
               }}
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              Chat (COD)
+              {isNegotiable ? 'Chat & Nego' : 'Chat Penjual'}
             </button>
           </div>
         )}

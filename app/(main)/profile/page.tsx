@@ -137,6 +137,7 @@ export default async function MyProfilePage() {
                 timeAgo={formatRelativeTime(product.created_at)}
                 status={product.status}
                 isNegotiable={product.is_negotiable}
+                isOwner={true}
               />
           ))}
 
