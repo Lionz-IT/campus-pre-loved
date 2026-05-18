@@ -16,6 +16,9 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'message_type') THEN
     CREATE TYPE message_type AS ENUM ('text', 'offer', 'offer_accept', 'offer_reject', 'system');
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listing_type') THEN
+    CREATE TYPE listing_type AS ENUM ('sell', 'barter');
+  END IF;
 
 END $$;
 
@@ -44,12 +47,15 @@ CREATE TABLE IF NOT EXISTS public.products (
   title           TEXT              NOT NULL CHECK (char_length(title) BETWEEN 3 AND 120),
   description     TEXT              CHECK (char_length(description) <= 2000),
   price           INT               CHECK (price IS NULL OR price > 0),
+  listing_type    listing_type      NOT NULL DEFAULT 'sell',
   category        product_category  NOT NULL,
   condition       TEXT              NOT NULL DEFAULT 'good'
                                       CHECK (condition IN ('new','like_new','good','fair','poor')),
   status          product_status    NOT NULL DEFAULT 'available',
+  booked_by       UUID              REFERENCES public.profiles(id) ON DELETE SET NULL,
   image_urls      TEXT[]            NOT NULL DEFAULT '{}',
   stock           INT               NOT NULL DEFAULT 1 CHECK (stock >= 0),
+  campus_location TEXT,
   is_negotiable   BOOLEAN           NOT NULL DEFAULT TRUE,
   is_deleted      BOOLEAN           NOT NULL DEFAULT FALSE,
   created_at      TIMESTAMPTZ       NOT NULL DEFAULT now(),
@@ -267,8 +273,8 @@ END $$;
 CREATE OR REPLACE VIEW public.v_marketplace_feed AS
 SELECT
   p.id, p.title, p.price,
-  p.category, p.condition, p.status, p.stock,
-  p.image_urls, p.is_negotiable, p.created_at,
+  p.listing_type, p.category, p.condition, p.status, p.stock,
+  p.image_urls, p.is_negotiable, p.campus_location, p.created_at,
   pr.full_name  AS seller_name,
   pr.avatar_url AS seller_avatar,
   pr.rating     AS seller_rating

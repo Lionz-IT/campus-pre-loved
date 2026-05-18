@@ -11,11 +11,18 @@ export const productSchema = z.object({
     .max(2000, 'Deskripsi maksimal 2000 karakter')
     .optional(),
 
+  listing_type: z.enum(['sell', 'barter'], {
+    error: 'Tipe penjualan wajib dipilih',
+  }).default('sell'),
+
+  campus_location: z.string().max(100, 'Lokasi maksimal 100 karakter').optional(),
+
   price: z.coerce
     .number({ error: 'Harga harus berupa angka' })
     .int('Harga harus bilangan bulat')
     .positive('Harga harus lebih dari 0')
-    .optional(),
+    .optional()
+    .or(z.literal('')),
 
   category: z.enum(
     [

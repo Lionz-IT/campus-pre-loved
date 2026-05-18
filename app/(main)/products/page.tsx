@@ -6,6 +6,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { ProductCard } from '@/components/ui/Card'
 import { formatPrice } from '@/lib/utils'
 import ProductFilters from '@/components/product/ProductFilters'
+import ProductSort from '@/components/product/ProductSort'
 
 export const metadata: Metadata = {
   title: 'Jelajahi Produk'
@@ -28,6 +29,15 @@ export default async function ProductsBrowsePage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 w-full">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Semua Barang</h1>
+        </div>
+        <Suspense fallback={<div className="h-10 w-48 bg-gray-100 animate-pulse rounded-lg" />}>
+          <ProductSort />
+        </Suspense>
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-8">
         <Suspense fallback={<div className="w-full lg:w-64 flex-shrink-0 animate-pulse bg-gray-100 h-96 rounded-xl" />}>
           <ProductFilters />

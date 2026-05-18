@@ -59,11 +59,23 @@ export default async function ProductEditPage({ params }: { params: Promise<{ id
           placeholder="Contoh: Arduino Uno R3 Bekas Pakai Normal"
         />
 
+        <SelectField id="listing_type" name="listing_type" required label="Tipe Penjualan" defaultValue={product.listing_type || 'sell'}>
+          <option value="sell">Jual (Rupiah)</option>
+          <option value="barter">Barter (Tukar Barang)</option>
+        </SelectField>
+
         <InputField
           id="price" name="price" type="number" min={0}
           label="Harga (Rp)"
           defaultValue={product.price ?? ''}
-          placeholder="Contoh: 85000"
+          placeholder="Contoh: 85000 (Kosongkan jika hanya Barter)"
+        />
+
+        <InputField
+          id="campus_location" name="campus_location"
+          label="Lokasi Kampus (opsional)"
+          defaultValue={product.campus_location ?? ''}
+          placeholder="Contoh: Gedung D4 / Kantin Pens"
         />
 
         <InputField

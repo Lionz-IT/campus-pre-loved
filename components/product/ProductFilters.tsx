@@ -16,7 +16,6 @@ export default function ProductFilters() {
 
   const [category, setCategory] = useState<string>(searchParams.get('category') || '')
   const [condition, setCondition] = useState<string>(searchParams.get('condition') || '')
-  const [sort, setSort] = useState<string>(searchParams.get('sort') || 'newest')
   const [minPrice, setMinPrice] = useState<string>(searchParams.get('min_price') || '')
   const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('max_price') || '')
 
@@ -29,9 +28,6 @@ export default function ProductFilters() {
     if (condition) params.set('condition', condition)
     else params.delete('condition')
     
-    if (sort && sort !== 'newest') params.set('sort', sort)
-    else params.delete('sort')
-    
     if (minPrice) params.set('min_price', minPrice)
     else params.delete('min_price')
     
@@ -40,7 +36,7 @@ export default function ProductFilters() {
     
     params.delete('page')
     router.push(`/products?${params.toString()}`)
-  }, [category, condition, sort, minPrice, maxPrice, searchParams, router])
+  }, [category, condition, minPrice, maxPrice, searchParams, router])
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
@@ -48,40 +44,14 @@ export default function ProductFilters() {
     
     if ((params.get('category') || '') !== category) hasChanges = true;
     if ((params.get('condition') || '') !== condition) hasChanges = true;
-    if ((params.get('sort') || 'newest') !== sort) hasChanges = true;
 
     if (hasChanges) {
         applyFilters();
     }
-  }, [category, condition, sort, applyFilters, searchParams]);
+  }, [category, condition, applyFilters, searchParams]);
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 w-full">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Semua Barang</h1>
-        </div>
-        
-        <div className="flex items-center gap-2 relative">
-          <span className="text-sm text-gray-600 font-medium">Urutkan:</span>
-          <div className="relative">
-            <select 
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 text-gray-700 py-2 pl-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4C1A57] focus:border-transparent cursor-pointer font-medium"
-            >
-              {SORT_OPTIONS.map(opt => (
-                 <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
+    <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
         <div>
           <h3 className="font-bold text-[#4C1A57] mb-4 tracking-wide flex justify-between items-center">
             Kategori
@@ -187,12 +157,11 @@ export default function ProductFilters() {
                   />
                   <div className="absolute w-2.5 h-2.5 bg-[#4C1A57] rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                 </div>
-                <span className="text-sm text-gray-700 group-hover:text-[#4C1A57] transition-colors">{cond.label}</span>
+                 <span className="text-sm text-gray-700 group-hover:text-[#4C1A57] transition-colors">{cond.label}</span>
                </label>
              ))}
            </div>
         </div>
       </aside>
-    </>
   )
 }

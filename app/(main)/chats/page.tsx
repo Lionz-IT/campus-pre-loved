@@ -4,10 +4,34 @@ import { getMyChatsAction } from '@/features/chats/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import ChatsSidebar from '@/components/chat/sidebar/ChatsSidebar'
 
-export default async function ChatsPage() {
+export default async function ChatsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(ROUTES.LOGIN)
+
+  const resolvedSearchParams = await searchParams;
+  const productId = resolvedSearchParams?.productId as string | undefined;
+
+  if (productId) {
+    const { data: product } = await supabase
+      .from('products')
+      .select('seller_id')
+      .eq('id', productId)
+      .single()
+
+    if (product && product.seller_id !== user.id) {
+      const { createChatRoomAction } = await import('@/features/chats/actions')
+      const result = await createChatRoomAction(productId, product.seller_id)
+      
+      if (result.success && result.data?.chatId) {
+        redirect(ROUTES.CHAT_ROOM(result.data.chatId))
+      }
+    }
+  }
 
   const result = await getMyChatsAction()
   const chats  = result.success ? result.data ?? [] : []

@@ -19,6 +19,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
   const parsed = productSchema.safeParse({
     ...raw,
     is_negotiable: raw.is_negotiable === 'true',
+    price: raw.price === '' ? undefined : raw.price,
   })
   if (!parsed.success) {
     const firstError = Object.values(parsed.error.flatten().fieldErrors).flat()[0]
@@ -54,6 +55,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
     .from('products')
     .insert({
       ...parsed.data,
+      price: typeof parsed.data.price === 'number' ? parsed.data.price : null,
       seller_id:    user.id,
       image_urls:   imageUrls,
     })
@@ -80,6 +82,7 @@ export async function updateProductAction(
   const parsed = productSchema.safeParse({
     ...raw,
     is_negotiable: raw.is_negotiable === 'true',
+    price: raw.price === '' ? undefined : raw.price,
   })
   if (!parsed.success) {
     const firstError = Object.values(parsed.error.flatten().fieldErrors).flat()[0]
@@ -88,7 +91,10 @@ export async function updateProductAction(
 
   const { error } = await supabase
     .from('products')
-    .update(parsed.data)
+    .update({
+      ...parsed.data,
+      price: typeof parsed.data.price === 'number' ? parsed.data.price : null,
+    })
     .eq('id', productId)
     .eq('seller_id', user.id)
 
