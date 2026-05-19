@@ -2,6 +2,7 @@
 export const ROUTES = {
 
   HOME:              '/',
+  DASHBOARD:         '/dashboard',
   PRODUCTS:          '/products',
   PRODUCT_DETAIL:    (id: string) => `/products/${id}`,
 

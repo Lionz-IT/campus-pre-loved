@@ -11,10 +11,11 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect(ROUTES.LOGIN)
-
-  const unreadResult = await getUnreadCountAction()
-  const unreadCount = unreadResult.success ? unreadResult.data ?? 0 : 0
+  let unreadCount = 0
+  if (user) {
+    const unreadResult = await getUnreadCountAction()
+    unreadCount = unreadResult.success ? unreadResult.data ?? 0 : 0
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -40,29 +41,45 @@ export default async function MainLayout({ children }: { children: React.ReactNo
               <span className="hidden sm:inline">Jelajahi</span>
               <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </Link>
-            <Link href="/wishlists" prefetch={true} className="text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
-              <span className="hidden sm:inline">Wishlist</span>
-              <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-            </Link>
-            <Link href={ROUTES.CHATS} prefetch={true} className="relative text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
-              <span className="hidden sm:inline">Chat</span>
-              <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-              {unreadCount > 0 && (
-                <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--accent)] text-white text-[10px] font-bold rounded-full px-1.5 leading-none shadow-sm shadow-[var(--accent)]/30 animate-pulse" aria-label={`${unreadCount} pesan belum dibaca`}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </Link>
-            <Link href={ROUTES.PROFILE} prefetch={true} className="text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
-              <span className="hidden sm:inline">Profil</span>
-              <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            </Link>
+            
+            {user && (
+              <>
+                <Link href="/wishlists" prefetch={true} className="text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
+                  <span className="hidden sm:inline">Wishlist</span>
+                  <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                </Link>
+                <Link href={ROUTES.CHATS} prefetch={true} className="relative text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
+                  <span className="hidden sm:inline">Chat</span>
+                  <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] flex items-center justify-center bg-[var(--accent)] text-white text-[10px] font-bold rounded-full px-1.5 leading-none shadow-sm shadow-[var(--accent)]/30 animate-pulse" aria-label={`${unreadCount} pesan belum dibaca`}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+                <Link href={ROUTES.PROFILE} prefetch={true} className="text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
+                  <span className="hidden sm:inline">Profil</span>
+                  <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                </Link>
+              </>
+            )}
 
             <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="px-3 sm:px-5 py-2 sm:py-2.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2 border border-[var(--accent)]/20">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
               <span className="hidden sm:inline">Jual Barang</span>
               <span className="sm:hidden">Jual</span>
             </Link>
+
+            {!user && (
+              <>
+                <Link href={ROUTES.LOGIN} className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all duration-200 hover:-translate-y-0.5 text-center">
+                  Login
+                </Link>
+                <Link href={ROUTES.REGISTER} className="px-3 sm:px-5 py-2 sm:py-2.5 bg-[var(--foreground)] text-white hover:bg-[var(--foreground)]/90 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 shadow-sm text-center">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </header>

@@ -140,7 +140,7 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
                     <p className="text-blue-600 font-bold text-base">
                       {formatPrice(product.price)}
                     </p>
-                    <p className="text-gray-400 text-xs">{formatRelativeTime(product.created_at)}</p>
+                    <p suppressHydrationWarning className="text-gray-400 text-xs">{formatRelativeTime(product.created_at)}</p>
                   </div>
                 </a>
               )

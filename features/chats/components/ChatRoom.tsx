@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useChat } from '@/hooks/useChat'
 import { sendOfferAction } from '@/features/chats/actions'
 import { formatPrice, getInitials } from '@/lib/utils'
+import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import type { MessageWithSender, Product } from '@/types'
 
 import MessageBubble from './MessageBubble'
@@ -32,6 +33,47 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
     if (!inputText.trim()) return
     await sendMessage(inputText)
     setInputText('')
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Hanya diperbolehkan mengupload file gambar!')
+      return
+    }
+
+    const toastId = toast.loading('Mengunggah gambar...')
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${crypto.randomUUID()}.${fileExt}`
+      const filePath = `${currentUserId}/${fileName}`
+
+      const { error } = await supabase.storage
+        .from('chat-attachments')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        toast.error(`Gagal mengunggah: ${error.message}`, { id: toastId })
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(filePath)
+
+      await sendMessage(publicUrl)
+      toast.success('Gambar berhasil dikirim!', { id: toastId })
+    } catch (err: any) {
+      toast.error(`Terjadi kesalahan: ${err?.message || err}`, { id: toastId })
+    } finally {
+      e.target.value = ''
+    }
   }
 
   const handleSendOffer = async () => {
@@ -161,8 +203,18 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
       {/* Input Area */}
       {product.status !== 'sold' ? (
         <div className="p-4 bg-white border-t border-gray-100">
-          <div className="flex gap-2 items-end bg-gray-50 rounded-2xl border border-gray-200 p-1 focus-within:border-purple-300 focus-within:ring-2 focus-within:ring-purple-100 transition-all">
-            <button className="p-3 text-gray-400 hover:text-purple-600 transition-colors rounded-xl hover:bg-purple-50 flex-shrink-0">
+          <input 
+            type="file" 
+            id="chat-file-input" 
+            accept="image/*" 
+            className="hidden" 
+            onChange={handleImageUpload} 
+          />
+          <div className="flex gap-2 items-end bg-purple-50/10 rounded-2xl border-2 border-purple-400 p-1 shadow-sm transition-all focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-100">
+            <button 
+              onClick={() => document.getElementById('chat-file-input')?.click()}
+              className="p-3 text-purple-500 hover:text-purple-600 transition-colors rounded-xl hover:bg-purple-50 flex-shrink-0"
+            >
                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                </svg>
@@ -173,7 +225,7 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               placeholder="Ketik pesan..."
               rows={1}
-              className="flex-1 bg-transparent text-gray-900 placeholder-gray-400 text-sm resize-none outline-none py-3 min-h-[44px] max-h-32"
+              className="flex-1 bg-transparent text-gray-900 placeholder-gray-400 text-sm resize-none outline-none focus:outline-none border-none focus:border-none focus:ring-0 py-3 min-h-[44px] max-h-32"
             />
             <button
               onClick={handleSend}
@@ -183,8 +235,8 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
               {isSending ? (
                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                 <svg className="w-5 h-5 translate-x-px -translate-y-px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                 <svg className="w-5 h-5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                   <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                  </svg>
               )}
             </button>

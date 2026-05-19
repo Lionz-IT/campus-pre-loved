@@ -223,7 +223,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             </div>
           </Card>
           
-          <p className="text-gray-400 text-xs">Diposting {formatRelativeTime(product.created_at)}</p>
+          <p suppressHydrationWarning className="text-gray-400 text-xs">Diposting {formatRelativeTime(product.created_at)}</p>
 
           <Suspense fallback={
             <div className="space-y-4">
