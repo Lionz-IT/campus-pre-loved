@@ -177,11 +177,27 @@ BEGIN
   IF TG_OP = 'INSERT' THEN
     UPDATE public.profiles SET total_listings = total_listings + 1 WHERE id = NEW.seller_id;
   ELSIF TG_OP = 'UPDATE' THEN
+    -- If soft-deleted
     IF NEW.is_deleted = TRUE AND OLD.is_deleted = FALSE THEN
       UPDATE public.profiles SET total_listings = GREATEST(total_listings - 1, 0) WHERE id = OLD.seller_id;
+      -- If it was sold, also decrement total_sold when soft-deleted
+      IF OLD.status = 'sold' THEN
+        UPDATE public.profiles SET total_sold = GREATEST(total_sold - 1, 0) WHERE id = OLD.seller_id;
+      END IF;
+    -- If restored from soft-delete
+    ELSIF NEW.is_deleted = FALSE AND OLD.is_deleted = TRUE THEN
+      UPDATE public.profiles SET total_listings = total_listings + 1 WHERE id = NEW.seller_id;
+      IF NEW.status = 'sold' THEN
+        UPDATE public.profiles SET total_sold = total_sold + 1 WHERE id = NEW.seller_id;
+      END IF;
     END IF;
-    IF OLD.status <> 'sold' AND NEW.status = 'sold' THEN
+
+    -- If status changes to sold (and not soft-deleted)
+    IF OLD.status <> 'sold' AND NEW.status = 'sold' AND NEW.is_deleted = FALSE THEN
       UPDATE public.profiles SET total_sold = total_sold + 1 WHERE id = NEW.seller_id;
+    -- If status changes from sold back to available (or other statuses)
+    ELSIF OLD.status = 'sold' AND NEW.status <> 'sold' AND NEW.is_deleted = FALSE THEN
+      UPDATE public.profiles SET total_sold = GREATEST(total_sold - 1, 0) WHERE id = NEW.seller_id;
     END IF;
   END IF;
   RETURN NULL;
@@ -369,6 +385,14 @@ CREATE POLICY "reviews: pembeli produk sold bisa review" ON public.reviews FOR I
     WHERE p.id = product_id
     AND p.status = 'sold'
     AND p.seller_id = reviews.seller_id
+    AND (
+      p.booked_by = auth.uid()
+      OR EXISTS (
+        SELECT 1 FROM public.chats c
+        WHERE c.product_id = p.id
+        AND c.buyer_id = auth.uid()
+      )
+    )
   )
 );
 DROP POLICY IF EXISTS "reviews: reviewer bisa update" ON public.reviews;
