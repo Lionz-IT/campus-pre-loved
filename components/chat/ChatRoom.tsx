@@ -10,23 +10,28 @@ import type { MessageWithSender, Product } from '@/types'
 
 import MessageBubble from './MessageBubble'
 import OfferModal from './OfferModal'
+import ReviewForm from '@/components/product/ReviewForm'
 
 interface ChatRoomProps {
   chatId:          string
   initialMessages: MessageWithSender[]
   currentUserId:   string
   isSeller:        boolean
-  product:         Pick<Product, 'id' | 'title' | 'price' | 'status' | 'image_urls'>
+  product:         Pick<Product, 'id' | 'title' | 'price' | 'status' | 'image_urls' | 'seller_id'>
   otherPerson:     { id: string, full_name: string, avatar_url: string | null }
+  canReviewInitially?: boolean
+  hasReviewedInitially?: boolean
 }
 
-export default function ChatRoom({ chatId, initialMessages, currentUserId, isSeller, product, otherPerson }: ChatRoomProps) {
+export default function ChatRoom({ chatId, initialMessages, currentUserId, isSeller, product, otherPerson, canReviewInitially, hasReviewedInitially }: ChatRoomProps) {
   const { messages, sendMessage, isSending, error, bottomRef } = useChat(chatId, initialMessages, currentUserId)
   const [inputText, setInputText]         = useState('')
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [offerPrice, setOfferPrice]        = useState('')
   const [offerNote, setOfferNote]          = useState('')
   const [isSubmitting, setIsSubmitting]    = useState(false)
+  const [hasReviewed, setHasReviewed]      = useState(hasReviewedInitially ?? false)
+  const [canReview, setCanReview]          = useState(canReviewInitially ?? false)
 
   const handleSend = async () => {
     if (!inputText.trim()) return
@@ -192,7 +197,24 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
         </div>
       ) : (
          <div className="p-4 bg-gray-50 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-500 font-medium">Obrolan ditutup karena barang sudah terjual.</p>
+            <p className="text-sm text-gray-500 font-medium mb-3">Obrolan ditutup karena barang sudah terjual.</p>
+            {!isSeller && canReview && !hasReviewed ? (
+               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-left">
+                  <h4 className="font-bold text-gray-900 mb-3 text-center">Berikan Ulasan untuk Penjual</h4>
+                  <ReviewForm 
+                    productId={product.id} 
+                    sellerId={product.seller_id} 
+                    onReviewSubmitted={() => {
+                       setHasReviewed(true)
+                       setCanReview(false)
+                    }} 
+                  />
+               </div>
+            ) : !isSeller && hasReviewed ? (
+               <div className="inline-block bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-bold border border-green-200">
+                 Terima kasih atas ulasan Anda! ⭐
+               </div>
+            ) : null}
          </div>
       )}
 

@@ -119,11 +119,13 @@ CREATE TRIGGER trg_products_updated_at BEFORE UPDATE ON public.products FOR EACH
 CREATE OR REPLACE FUNCTION public.fn_handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  INSERT INTO public.profiles (id, campus_email, full_name)
+  INSERT INTO public.profiles (id, campus_email, full_name, department, nim)
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1))
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    NEW.raw_user_meta_data->>'department',
+    NEW.raw_user_meta_data->>'nim'
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;

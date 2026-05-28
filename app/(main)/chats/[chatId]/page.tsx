@@ -8,7 +8,9 @@ import { getChatMessagesAction } from '@/features/chats/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import Badge from '@/components/ui/Badge'
 
-const ChatRoom = dynamic(() => import('@/features/chats/components/ChatRoom'), {
+import { checkCanReviewAction } from '@/features/reviews/actions'
+
+const ChatRoom = dynamic(() => import('@/components/chat/ChatRoom'), {
   loading: () => (
     <div className="flex-1 flex items-center justify-center">
       <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -47,6 +49,17 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
   const statusVariant = chat.product.status === 'available' ? 'green' as const : 'gray' as const
   const statusLabel = chat.product.status === 'available' ? 'Tersedia' : 'Terjual'
 
+  let canReview = false
+  let hasReviewed = false
+
+  if (!isSeller && chat.product.status === 'sold') {
+    const reviewCheck = await checkCanReviewAction(chat.product.id, chat.product.seller_id)
+    if (reviewCheck.success && reviewCheck.data) {
+      canReview = reviewCheck.data.canReview
+      hasReviewed = reviewCheck.data.hasReviewed
+    }
+  }
+
   return (
     <div className="w-full h-full flex flex-col absolute inset-0 md:static md:max-w-2xl md:mx-auto md:h-full bg-white md:bg-transparent">
       <div className="flex items-center gap-3 p-3 sm:p-4 bg-white border-b md:border md:rounded-2xl md:mb-4 flex-shrink-0 border-gray-200 sticky top-0 z-10">
@@ -83,6 +96,8 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
         isSeller={isSeller}
         product={chat.product}
         otherPerson={isSeller ? chat.buyer : chat.seller}
+        canReviewInitially={canReview}
+        hasReviewedInitially={hasReviewed}
       />
     </div>
   )

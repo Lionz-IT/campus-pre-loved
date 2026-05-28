@@ -42,3 +42,12 @@ next-env.d.ts
 
 #database
 db.sql
+
+# IDE & AI Tools
+.vscode/
+.idea/
+.sisyphus/
+**/AGENTS.md
+
+# Testing
+.vitest/

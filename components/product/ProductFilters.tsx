@@ -4,12 +4,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '@/lib/constants/pens'
 
-const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Terbaru' },
-  { value: 'price_asc',  label: 'Termurah' },
-  { value: 'price_desc', label: 'Termahal' },
-] as const
-
 export default function ProductFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()

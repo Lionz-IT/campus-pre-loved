@@ -10,6 +10,16 @@ export const registerSchema = z
       .min(3, 'Nama lengkap minimal 3 karakter')
       .max(100, 'Nama lengkap maksimal 100 karakter'),
 
+    department: z
+      .string({ error: 'Departemen/Jurusan wajib diisi' })
+      .min(2, 'Departemen minimal 2 karakter')
+      .max(100, 'Departemen maksimal 100 karakter'),
+
+    nim: z
+      .string({ error: 'NRP wajib diisi' })
+      .min(5, 'NRP minimal 5 karakter')
+      .max(20, 'NRP maksimal 20 karakter'),
+
     campus_email: z
       .string({ error: 'Email kampus wajib diisi' })
       .email('Format email tidak valid')

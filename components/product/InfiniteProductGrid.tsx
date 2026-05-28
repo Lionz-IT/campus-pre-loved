@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { getMarketplaceFeedAction } from '@/features/products/actions'
-import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/Card'
 import type { ProductWithSeller } from '@/types'
 
@@ -13,11 +12,14 @@ interface InfiniteProductGridProps {
     search?: string
     sort?: string
     condition?: string
+    min_price?: string
+    max_price?: string
   }
   pageSize: number
+  currentUserId?: string
 }
 
-export default function InfiniteProductGrid({ initialProducts, filters, pageSize }: InfiniteProductGridProps) {
+export default function InfiniteProductGrid({ initialProducts, filters, pageSize, currentUserId }: InfiniteProductGridProps) {
   const [products, setProducts] = useState(initialProducts)
   const [page, setPage] = useState(2)
   const [hasMore, setHasMore] = useState(initialProducts.length >= pageSize)
@@ -41,6 +43,8 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
         search:    filters.search,
         sort:      filters.sort,
         condition: filters.condition,
+        min_price: filters.min_price,
+        max_price: filters.max_price,
         page,
         limit:     pageSize,
       })
@@ -72,7 +76,7 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-10">
         {products.map((product) => (
           <ProductCard
             key={product.id}
@@ -80,10 +84,9 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
             title={product.title}
             price={product.price}
             imageUrl={product.image_urls[0]}
-
-
             status={product.status}
             isNegotiable={product.is_negotiable}
+            isOwner={currentUserId === product.seller_id}
           />
         ))}
       </div>

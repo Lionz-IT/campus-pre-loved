@@ -28,7 +28,7 @@ export default function SearchBar({ defaultValue }: { defaultValue?: string }) {
     // Skip the initial render — only navigate on actual user input changes
     if (debouncedQuery === (defaultValue ?? '')) return
     router.push(buildUrl(debouncedQuery))
-  }, [debouncedQuery]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedQuery, buildUrl, defaultValue, router])
 
   return (
     <div className="flex gap-3">

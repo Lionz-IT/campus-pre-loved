@@ -63,7 +63,7 @@ export default async function MyProfilePage() {
             </div>
             
             <p className="text-sm text-gray-500 font-medium">
-              {profile?.department || 'Universitas'} � Angkatan {profile?.nim ? '20' + profile.nim.substring(2, 4) : '2021'}
+              {profile?.department || 'Departemen belum diisi'} • {profile?.nim ? `NRP: ${profile.nim}` : 'NRP belum diisi'}
             </p>
             
             <div className="flex items-center justify-center sm:justify-start gap-3 mt-4 pt-2">
@@ -73,9 +73,12 @@ export default async function MyProfilePage() {
               >
                 Edit Profil
               </Link>
-              <button className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors">
-                Bagikan
-              </button>
+              <Link 
+                href={ROUTES.PROFILE_PUBLIC(user.id)} 
+                className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors"
+              >
+                Lihat Profil Publik
+              </Link>
             </div>
           </div>
         </div>
@@ -83,13 +86,13 @@ export default async function MyProfilePage() {
         {/* Stats */}
         <div className="flex items-stretch gap-8 bg-gray-50/80 px-8 py-5 rounded-2xl border border-gray-100 w-full md:w-auto justify-center">
           <div className="flex flex-col items-center justify-center space-y-1">
-            <span className="text-3xl font-black text-gray-900">{profile?.total_sold ?? 12}</span>
+            <span className="text-3xl font-black text-gray-900">{profile?.total_sold ?? 0}</span>
             <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Terjual</span>
           </div>
           <div className="w-px bg-gray-300 rounded-full my-1"></div>
           <div className="flex flex-col items-center justify-center space-y-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-3xl font-black text-gray-900">{profile?.rating?.toFixed(1) ?? '4.8'}</span>
+              <span className="text-3xl font-black text-gray-900">{profile?.rating?.toFixed(1) ?? '0.0'}</span>
               <svg className="w-6 h-6 text-amber-400 fill-amber-400 mb-1" viewBox="0 0 24 24">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
@@ -99,23 +102,7 @@ export default async function MyProfilePage() {
         </div>
       </div>
 
-      {/* 2. Tabs */}
-      <div className="flex items-center gap-8 border-b border-gray-200 overflow-x-auto no-scrollbar px-1">
-        {['Barang Saya', 'Pesanan', 'Chat Tersimpan', 'Pengaturan'].map((tab, i) => (
-          <button 
-            key={tab}
-            className={`pb-4 text-base font-semibold whitespace-nowrap border-b-[3px] transition-colors ${
-              i === 0 
-                ? 'border-purple-600 text-purple-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* 3. Content Bawah (Barang Saya) */}
+      {/* Content Bawah (Barang Saya) */}
       <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Sedang Dijual <span className="text-gray-400 font-medium text-base ml-1">({listings.length})</span></h2>

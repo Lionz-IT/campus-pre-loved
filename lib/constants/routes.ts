@@ -23,5 +23,4 @@ export const ROUTES = {
 
 
   AUTH_CALLBACK:     '/api/auth/callback',
-  STORAGE_UPLOAD:    '/api/storage/upload',
 } as const

@@ -40,7 +40,8 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicRoute =
     pathname === '/' ||
-    pathname.startsWith('/products')
+    pathname === '/products' ||
+    (pathname.startsWith('/products/') && !pathname.endsWith('/edit') && !pathname.includes('/new'))
 
   if (pathname.startsWith('/api')) return supabaseResponse
 

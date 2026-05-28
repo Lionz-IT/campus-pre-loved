@@ -46,7 +46,30 @@ export default function RegisterPage() {
           label="Nama Lengkap"
           placeholder="John Doe"
           required
+          hint="Minimal 3 karakter dan maksimal 100 karakter"
         />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <InputField
+            id="department"
+            name="department"
+            type="text"
+            label="Departemen / Jurusan"
+            placeholder="Teknik Informatika"
+            required
+            hint="Sesuai dengan prodi/jurusan Anda"
+          />
+
+          <InputField
+            id="nim"
+            name="nim"
+            type="text"
+            label="NRP / NIM"
+            placeholder="3120..."
+            required
+            hint="NRP asli yang terdaftar"
+          />
+        </div>
 
         <InputField
           id="campus_email"
@@ -65,6 +88,7 @@ export default function RegisterPage() {
           label="Password"
           placeholder="••••••••"
           required
+          hint="Minimal 8 karakter, wajib mengandung minimal 1 huruf besar dan 1 angka"
         />
 
         <InputField
@@ -74,6 +98,7 @@ export default function RegisterPage() {
           label="Konfirmasi Password"
           placeholder="••••••••"
           required
+          hint="Ketik ulang password Anda untuk konfirmasi"
         />
 
         <Button type="submit" fullWidth size="lg" loading={loading}>

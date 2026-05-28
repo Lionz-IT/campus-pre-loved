@@ -11,11 +11,12 @@ import { ROUTES } from '@/lib/constants/routes'
 export async function registerAction(formData: FormData): Promise<ActionResult> {
   const raw = {
     full_name:        formData.get('full_name'),
+    department:       formData.get('department'),
+    nim:              formData.get('nim'),
     campus_email:     formData.get('campus_email'),
     password:         formData.get('password'),
     confirm_password: formData.get('confirm_password'),
   }
-
 
   const parsed = registerSchema.safeParse(raw)
   if (!parsed.success) {
@@ -28,7 +29,11 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     email:    parsed.data.campus_email,
     password: parsed.data.password,
     options: {
-      data:             { full_name: parsed.data.full_name },
+      data: { 
+        full_name:  parsed.data.full_name,
+        department: parsed.data.department,
+        nim:        parsed.data.nim
+      },
       emailRedirectTo:  `${process.env.NEXT_PUBLIC_SITE_URL}${ROUTES.AUTH_CALLBACK}`,
     },
   })

@@ -7,6 +7,7 @@ import { ProductCard } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import CategoryIcon from '@/components/ui/CategoryIcon'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export const metadata: Metadata = {
   title: 'Campus Pre-loved | Marketplace Mahasiswa PENS',
@@ -58,11 +59,12 @@ export default async function HomePage({
           <div className="flex-1 w-full md:w-auto flex justify-center md:justify-end">
             <div className="bg-white p-4 pb-10 shadow-xl rounded-sm rotate-3 hover:rotate-6 transition-transform duration-300">
               <div className="relative w-full max-w-sm aspect-[4/3] bg-gray-100 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
+                <Image 
                   src="https://picsum.photos/seed/books/600/400" 
                   alt="Books Polaroid" 
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 400px"
+                  className="object-cover"
                 />
               </div>
             </div>
