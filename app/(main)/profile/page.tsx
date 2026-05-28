@@ -21,7 +21,7 @@ export default async function MyProfilePage() {
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('products')
-      .select('*, seller:profiles(*)')
+      .select('*')
       .eq('seller_id', user.id)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false }),
