@@ -1,9 +1,11 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { ROUTES } from '@/lib/constants/routes'
+
+import { logoutAction } from '@/features/auth/actions'
 
 import { ProductCard } from '@/components/ui/Card'
 
@@ -63,22 +65,40 @@ export default async function MyProfilePage() {
             </div>
             
             <p className="text-sm text-gray-500 font-medium">
+<<<<<<< HEAD
               {profile?.department || 'Departemen belum diisi'} • {profile?.nim ? `NRP: ${profile.nim}` : 'NRP belum diisi'}
+=======
+              {profile?.department || 'Universitas'} • Angkatan {profile?.nim ? '20' + profile.nim.substring(2, 4) : '2021'}
+>>>>>>> a0dc1e960baa4594e534a7b985ae3a7d93887ddc
             </p>
             
-            <div className="flex items-center justify-center sm:justify-start gap-3 mt-4 pt-2">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4 pt-2">
               <Link 
                 href={ROUTES.PROFILE_SETTINGS} 
                 className="inline-flex items-center justify-center px-6 py-2 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm shadow-purple-600/20"
               >
                 Edit Profil
               </Link>
+<<<<<<< HEAD
               <Link 
                 href={ROUTES.PROFILE_PUBLIC(user.id)} 
                 className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors"
               >
                 Lihat Profil Publik
               </Link>
+=======
+              <button className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors">
+                Bagikan
+              </button>
+              <form action={logoutAction} className="inline-flex">
+                <button 
+                  type="submit" 
+                  className="inline-flex items-center justify-center px-6 py-2 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 active:bg-red-100 text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+                >
+                  Keluar
+                </button>
+              </form>
+>>>>>>> a0dc1e960baa4594e534a7b985ae3a7d93887ddc
             </div>
           </div>
         </div>

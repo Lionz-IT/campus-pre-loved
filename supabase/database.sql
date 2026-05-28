@@ -160,7 +160,6 @@ CREATE TRIGGER trg_on_new_message AFTER INSERT ON public.messages FOR EACH ROW E
 CREATE OR REPLACE FUNCTION public.fn_guard_product_status()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
-  -- Auto set status to 'sold' if stock hits 0, and back to 'available' if stock > 0
   IF NEW.stock = 0 THEN
     NEW.status = 'sold';
   ELSIF NEW.stock > 0 THEN
@@ -180,11 +179,27 @@ BEGIN
   IF TG_OP = 'INSERT' THEN
     UPDATE public.profiles SET total_listings = total_listings + 1 WHERE id = NEW.seller_id;
   ELSIF TG_OP = 'UPDATE' THEN
+    -- If soft-deleted
     IF NEW.is_deleted = TRUE AND OLD.is_deleted = FALSE THEN
       UPDATE public.profiles SET total_listings = GREATEST(total_listings - 1, 0) WHERE id = OLD.seller_id;
+      -- If it was sold, also decrement total_sold when soft-deleted
+      IF OLD.status = 'sold' THEN
+        UPDATE public.profiles SET total_sold = GREATEST(total_sold - 1, 0) WHERE id = OLD.seller_id;
+      END IF;
+    -- If restored from soft-delete
+    ELSIF NEW.is_deleted = FALSE AND OLD.is_deleted = TRUE THEN
+      UPDATE public.profiles SET total_listings = total_listings + 1 WHERE id = NEW.seller_id;
+      IF NEW.status = 'sold' THEN
+        UPDATE public.profiles SET total_sold = total_sold + 1 WHERE id = NEW.seller_id;
+      END IF;
     END IF;
-    IF OLD.status <> 'sold' AND NEW.status = 'sold' THEN
+
+    -- If status changes to sold (and not soft-deleted)
+    IF OLD.status <> 'sold' AND NEW.status = 'sold' AND NEW.is_deleted = FALSE THEN
       UPDATE public.profiles SET total_sold = total_sold + 1 WHERE id = NEW.seller_id;
+    -- If status changes from sold back to available (or other statuses)
+    ELSIF OLD.status = 'sold' AND NEW.status <> 'sold' AND NEW.is_deleted = FALSE THEN
+      UPDATE public.profiles SET total_sold = GREATEST(total_sold - 1, 0) WHERE id = NEW.seller_id;
     END IF;
   END IF;
   RETURN NULL;
@@ -238,13 +253,14 @@ CREATE POLICY "messages: tidak bisa delete" ON public.messages FOR DELETE USING 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES
   ('product-images', 'product-images', TRUE, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
-  ('avatars', 'avatars', TRUE, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp'])
+  ('avatars', 'avatars', TRUE, 2097152, ARRAY['image/jpeg', 'image/png', 'image/webp']),
+  ('chat-attachments', 'chat-attachments', TRUE, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
 
 DROP POLICY IF EXISTS "storage product-images: baca publik" ON storage.objects;
 CREATE POLICY "storage product-images: baca publik" ON storage.objects FOR SELECT USING (bucket_id = 'product-images');
-DROP POLICY IF EXISTS "storage product-images: upload terautentikasi" ON storage.objects;
-CREATE POLICY "storage product-images: upload terautentikasi" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'product-images' AND auth.role() = 'authenticated' AND (storage.foldername(name))[1] = auth.uid()::text);
+DROP POLICY IF EXISTS "storage product-images: upload terautok" ON storage.objects;
+CREATE POLICY "storage product-images: upload terautok" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'product-images' AND auth.role() = 'authenticated' AND (storage.foldername(name))[1] = auth.uid()::text);
 DROP POLICY IF EXISTS "storage product-images: pemilik update" ON storage.objects;
 CREATE POLICY "storage product-images: pemilik update" ON storage.objects FOR UPDATE USING (bucket_id = 'product-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 DROP POLICY IF EXISTS "storage product-images: pemilik delete" ON storage.objects;
@@ -256,6 +272,13 @@ DROP POLICY IF EXISTS "storage avatars: pemilik upload" ON storage.objects;
 CREATE POLICY "storage avatars: pemilik upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.role() = 'authenticated' AND (storage.foldername(name))[1] = auth.uid()::text);
 DROP POLICY IF EXISTS "storage avatars: pemilik delete" ON storage.objects;
 CREATE POLICY "storage avatars: pemilik delete" ON storage.objects FOR DELETE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+DROP POLICY IF EXISTS "storage chat-attachments: baca publik" ON storage.objects;
+CREATE POLICY "storage chat-attachments: baca publik" ON storage.objects FOR SELECT USING (bucket_id = 'chat-attachments');
+DROP POLICY IF EXISTS "storage chat-attachments: pemilik upload" ON storage.objects;
+CREATE POLICY "storage chat-attachments: pemilik upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'chat-attachments' AND auth.role() = 'authenticated' AND (storage.foldername(name))[1] = auth.uid()::text);
+DROP POLICY IF EXISTS "storage chat-attachments: pemilik delete" ON storage.objects;
+CREATE POLICY "storage chat-attachments: pemilik delete" ON storage.objects FOR DELETE USING (bucket_id = 'chat-attachments' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 DO $$
 BEGIN
@@ -284,10 +307,6 @@ FROM public.products  p
 JOIN public.profiles pr ON pr.id = p.seller_id
 WHERE p.status = 'available' AND p.is_deleted = FALSE;
 
--- =============================================
--- WISHLISTS
--- =============================================
-
 CREATE TABLE IF NOT EXISTS public.wishlists (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -307,10 +326,6 @@ DROP POLICY IF EXISTS "wishlists: user bisa tambah" ON public.wishlists;
 CREATE POLICY "wishlists: user bisa tambah" ON public.wishlists FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND auth.uid() = user_id);
 DROP POLICY IF EXISTS "wishlists: pemilik bisa hapus" ON public.wishlists;
 CREATE POLICY "wishlists: pemilik bisa hapus" ON public.wishlists FOR DELETE USING (auth.uid() = user_id);
-
--- =============================================
--- REVIEWS
--- =============================================
 
 CREATE TABLE IF NOT EXISTS public.reviews (
   id          UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -372,6 +387,14 @@ CREATE POLICY "reviews: pembeli produk sold bisa review" ON public.reviews FOR I
     WHERE p.id = product_id
     AND p.status = 'sold'
     AND p.seller_id = reviews.seller_id
+    AND (
+      p.booked_by = auth.uid()
+      OR EXISTS (
+        SELECT 1 FROM public.chats c
+        WHERE c.product_id = p.id
+        AND c.buyer_id = auth.uid()
+      )
+    )
   )
 );
 DROP POLICY IF EXISTS "reviews: reviewer bisa update" ON public.reviews;

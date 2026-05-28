@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef, useOptimistic } from 'react'
+import { useEffect, useState, useCallback, useRef, useOptimistic, startTransition } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { sendMessageAction, markMessagesReadAction } from '@/features/chats/actions'
 import type { Message, MessageWithSender } from '@/types'
@@ -72,16 +72,18 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[], cu
       
       if (currentUserId) {
         const tempId = crypto.randomUUID()
-        addOptimisticMessage({
-          id: tempId,
-          chat_id: chatId,
-          sender_id: currentUserId,
-          message_type: 'text',
-          content,
-          payload: null,
-          is_read: false,
-          created_at: new Date().toISOString(),
-          sender: { id: currentUserId, full_name: 'Me', avatar_url: null }
+        startTransition(() => {
+          addOptimisticMessage({
+            id: tempId,
+            chat_id: chatId,
+            sender_id: currentUserId,
+            message_type: 'text',
+            content,
+            payload: null,
+            is_read: false,
+            created_at: new Date().toISOString(),
+            sender: { id: currentUserId, full_name: 'Me', avatar_url: null }
+          })
         })
       }
 

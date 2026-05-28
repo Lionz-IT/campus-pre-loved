@@ -79,8 +79,8 @@ export type MessagePayload =
 
 
 export type ActionResult<T = void> =
-  | { success: true;  data?: T }
-  | { success: false; error: string }
+  | { success: true; data?: T; error?: never; fieldErrors?: never }
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
 
 
 // ── Wishlists ──────────────────────────────────────────────

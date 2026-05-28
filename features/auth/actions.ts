@@ -65,7 +65,7 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   if (error) return { success: false, error: 'Email atau password salah' }
 
   revalidatePath('/', 'layout')
-  redirect(ROUTES.HOME)
+  return { success: true }
 }
 
 

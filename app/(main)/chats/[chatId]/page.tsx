@@ -62,7 +62,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
 
   return (
     <div className="w-full h-full flex flex-col absolute inset-0 md:static md:max-w-2xl md:mx-auto md:h-full bg-white md:bg-transparent">
-      <div className="flex items-center gap-3 p-3 sm:p-4 bg-white border-b md:border md:rounded-2xl md:mb-4 flex-shrink-0 border-gray-200 sticky top-0 z-10">
+      <div className="flex items-center gap-3 p-3 sm:p-4 bg-white border rounded-2xl mb-4 flex-shrink-0 border-gray-200 sticky top-0 z-10 shadow-sm">
         <Link href={ROUTES.CHATS} className="md:hidden p-2 -ml-2 text-gray-500 hover:text-purple-600 rounded-full hover:bg-purple-50 transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

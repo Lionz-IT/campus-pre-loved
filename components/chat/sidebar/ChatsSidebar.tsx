@@ -69,14 +69,12 @@ export default function ChatsSidebar({ chats, userId }: ChatsSidebarProps) {
                 <Link
                   key={chat.id}
                   href={ROUTES.CHAT_ROOM(chat.id)}
-                  className={`relative flex items-center gap-3 p-4 border-b border-gray-50 transition-all ${
-                    isActive ? 'bg-purple-50/50' : 'hover:bg-gray-50'
+                  className={`relative flex items-center gap-3 p-4 mx-3 my-2 rounded-2xl border transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-purple-50/50 border-purple-400 shadow-sm shadow-purple-100/50' 
+                      : 'bg-white border-gray-200/80 hover:border-purple-300 hover:bg-purple-50/10'
                   }`}
                 >
-                  {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-600 rounded-r-full" />
-                  )}
-
                   <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 ring-1 ring-black/5">
                     {otherPerson?.avatar_url ? (
                       <Image src={otherPerson.avatar_url} alt={otherPerson.full_name || 'User'} fill sizes="48px" className="object-cover" />
@@ -93,7 +91,10 @@ export default function ChatsSidebar({ chats, userId }: ChatsSidebarProps) {
                         {otherPerson?.full_name}
                       </p>
                       {chat.last_message_at && (
-                        <span className={`text-xs whitespace-nowrap flex-shrink-0 ${isActive ? 'text-purple-600 font-medium' : 'text-gray-400'}`}>
+                        <span 
+                          suppressHydrationWarning
+                          className={`text-xs whitespace-nowrap flex-shrink-0 ${isActive ? 'text-purple-600 font-medium' : 'text-gray-400'}`}
+                        >
                           {formatRelativeTime(chat.last_message_at)}
                         </span>
                       )}

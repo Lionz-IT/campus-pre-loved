@@ -45,6 +45,7 @@ export async function updateSession(request: NextRequest) {
 
   if (pathname.startsWith('/api')) return supabaseResponse
 
+  // If NOT logged in, block protected routes (like /dashboard) and redirect to login
   if (!user && !isAuthRoute && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = ROUTES.LOGIN
@@ -52,9 +53,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
+  // If logged in, block auth routes and redirect to dashboard
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = ROUTES.HOME
+    url.pathname = ROUTES.DASHBOARD
+    return NextResponse.redirect(url)
+  }
+
+  // If logged in and visiting home page (/), redirect to dashboard
+  if (user && pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = ROUTES.DASHBOARD
     return NextResponse.redirect(url)
   }
 

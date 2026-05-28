@@ -144,9 +144,20 @@ export default function MessageBubble({ message, isOwn, isSeller, chatId, otherP
           ? 'bg-purple-700 text-white rounded-2xl rounded-br-sm' 
           : 'bg-white text-gray-800 rounded-2xl rounded-bl-sm border border-gray-100'
       }`}>
-        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-           {message.content}
-        </p>
+        {message.content?.match(/\.(jpeg|jpg|gif|png|webp)/i) || message.content?.includes('chat-attachments') || message.content?.startsWith('data:image/') ? (
+          <div className="relative mt-1 max-w-sm rounded-xl overflow-hidden border border-gray-100/30 bg-gray-50/20 shadow-sm transition-all duration-200 hover:brightness-95">
+            <img 
+              src={message.content || undefined} 
+              alt="Gambar Terkirim" 
+              className="max-h-64 object-contain rounded-xl w-full cursor-zoom-in"
+              onClick={() => message.content && window.open(message.content, '_blank')}
+            />
+          </div>
+        ) : (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+             {message.content}
+          </p>
+        )}
         
         <div className={`flex items-center justify-end gap-1 mt-1.5 -mb-1 ${isOwn ? 'text-purple-300' : 'text-gray-400'}`}>
            <span className="text-[10px] font-medium leading-none">

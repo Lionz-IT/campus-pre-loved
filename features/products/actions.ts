@@ -10,63 +10,108 @@ import { redirect } from 'next/navigation'
 
 
 export async function createProductAction(formData: FormData): Promise<ActionResult<{ id: string }>> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
+  try {
+    const supabase = await createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
 
-
-  const raw = Object.fromEntries(formData)
-  const parsed = productSchema.safeParse({
-    ...raw,
-    is_negotiable: raw.is_negotiable === 'true',
-    price: raw.price === '' ? undefined : raw.price,
-  })
-  if (!parsed.success) {
-    const firstError = Object.values(parsed.error.flatten().fieldErrors).flat()[0]
-    return { success: false, error: firstError ?? 'Data produk tidak valid' }
-  }
-
-
-  const imageFiles = formData.getAll('images') as File[]
-  const imageUrls: string[] = []
-  
-  const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-
-  for (const file of imageFiles.slice(0, 5)) {
-    if (file.size === 0) continue
-    if (file.size > MAX_FILE_SIZE) return { success: false, error: `File ${file.name} terlalu besar (maksimal 5MB)` }
-    if (!ALLOWED_TYPES.includes(file.type)) return { success: false, error: `Format file ${file.name} tidak didukung` }
-
-    const filePath = generateStorageFileName(user.id, file.name)
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, file)
-    if (uploadError) return { success: false, error: `Gagal upload foto: ${uploadError.message}` }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(filePath)
-    imageUrls.push(publicUrl)
-  }
-
-
-  const { data, error } = await supabase
-    .from('products')
-    .insert({
-      ...parsed.data,
-      price: typeof parsed.data.price === 'number' ? parsed.data.price : null,
-      seller_id:    user.id,
-      image_urls:   imageUrls,
+    const raw = Object.fromEntries(formData)
+    const parsed = productSchema.safeParse({
+      ...raw,
+      is_negotiable: raw.is_negotiable === 'true',
+      price: raw.price === '' ? undefined : raw.price,
     })
-    .select('id')
-    .single()
+    
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      const firstError = Object.values(fieldErrors).flat()[0]
+      return { 
+        success: false, 
+        error: firstError ?? 'Data produk tidak valid',
+        fieldErrors: fieldErrors as Record<string, string[]>
+      }
+    }
 
-  if (error) return { success: false, error: error.message }
-  revalidatePath(ROUTES.HOME)
-  revalidatePath(ROUTES.PRODUCTS)
-  return { success: true, data: { id: data.id } }
+    const imageFiles = formData.getAll('images') as File[]
+    const imageUrls: string[] = []
+    
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+    for (const file of imageFiles.slice(0, 5)) {
+      if (file.size === 0) continue
+      if (file.size > MAX_FILE_SIZE) return { success: false, error: `File ${file.name} terlalu besar (maksimal 5MB)` }
+      if (!ALLOWED_TYPES.includes(file.type)) return { success: false, error: `Format file ${file.name} tidak didukung` }
+
+      const filePath = generateStorageFileName(user.id, file.name)
+      
+      // Convert standard File object to ArrayBuffer for Node-side upload
+      const arrayBuffer = await file.arrayBuffer()
+      const fileBuffer = Buffer.from(arrayBuffer)
+      
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, fileBuffer, {
+          contentType: file.type,
+          upsert: true
+        })
+      if (uploadError) return { success: false, error: `Gagal upload foto: ${uploadError.message}` }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath)
+      imageUrls.push(publicUrl)
+    }
+
+    // Pastikan profile seller sudah ada di tabel public.profiles (menghindari products_seller_id_fkey)
+    const { data: profileExists, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profileCheckError) {
+      console.error('Error checking user profile existence:', profileCheckError)
+    }
+
+    if (!profileExists) {
+      // Profile tidak ditemukan, kita buat profil default secara otomatis
+      const defaultFullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Mahasiswa PENS'
+      const { error: profileInsertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          campus_email: user.email!,
+          full_name: defaultFullName,
+        })
+      if (profileInsertError) {
+        console.error('Failed to auto-create missing user profile:', profileInsertError)
+        return { success: false, error: `Gagal menyimpan produk: profil pengguna tidak ditemukan di database. (${profileInsertError.message})` }
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        ...parsed.data,
+        price: typeof parsed.data.price === 'number' ? parsed.data.price : null,
+        seller_id:    user.id,
+        image_urls:   imageUrls,
+      })
+      .select('id')
+      .single()
+
+    if (error) return { success: false, error: `Gagal menyimpan produk: ${error.message}` }
+    
+    revalidatePath(ROUTES.HOME)
+    revalidatePath(ROUTES.PRODUCTS)
+    return { success: true, data: { id: data.id } }
+  } catch (err: any) {
+    console.error('Error in createProductAction:', err)
+    return { success: false, error: err?.message || 'Terjadi kesalahan sistem internal' }
+  }
 }
+
 
 
 export async function updateProductAction(
