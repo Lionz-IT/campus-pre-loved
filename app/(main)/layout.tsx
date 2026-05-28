@@ -1,11 +1,10 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { ROUTES } from '@/lib/constants/routes'
 import { getUnreadCountAction } from '@/features/chats/actions'
 import GSAPAnimations from '@/components/layout/GSAPAnimations'
 import NextTopLoader from 'nextjs-toploader'
 import Link from 'next/link'
 import Image from 'next/image'
+import { ROUTES } from '@/lib/constants/routes'
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -42,11 +41,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
               <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </Link>
             
-<<<<<<< HEAD
             {user ? (
-=======
-            {user && (
->>>>>>> a0dc1e960baa4594e534a7b985ae3a7d93887ddc
               <>
                 <Link href="/wishlists" prefetch={true} className="text-[#3730a3] hover:text-[var(--accent)] font-semibold transition-colors duration-200">
                   <span className="hidden sm:inline">Wishlist</span>
@@ -65,7 +60,6 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                   <span className="hidden sm:inline">Profil</span>
                   <svg className="w-6 h-6 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 </Link>
-<<<<<<< HEAD
 
                 <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="px-3 sm:px-5 py-2 sm:py-2.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2 border border-[var(--accent)]/20">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -77,26 +71,6 @@ export default async function MainLayout({ children }: { children: React.ReactNo
               <Link href={ROUTES.LOGIN} prefetch={true} className="px-5 py-2.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200">
                 Masuk / Daftar
               </Link>
-=======
-              </>
-            )}
-
-            <Link href={ROUTES.PRODUCT_NEW} prefetch={true} className="px-3 sm:px-5 py-2 sm:py-2.5 bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-[var(--primary)]/20 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] flex items-center gap-2 border border-[var(--accent)]/20">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.5v15m7.5-7.5h-15" /></svg>
-              <span className="hidden sm:inline">Jual Barang</span>
-              <span className="sm:hidden">Jual</span>
-            </Link>
-
-            {!user && (
-              <>
-                <Link href={ROUTES.LOGIN} className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all duration-200 hover:-translate-y-0.5 text-center">
-                  Login
-                </Link>
-                <Link href={ROUTES.REGISTER} className="px-3 sm:px-5 py-2 sm:py-2.5 bg-[var(--foreground)] text-white hover:bg-[var(--foreground)]/90 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 shadow-sm text-center">
-                  Register
-                </Link>
-              </>
->>>>>>> a0dc1e960baa4594e534a7b985ae3a7d93887ddc
             )}
           </div>
         </nav>
@@ -176,4 +150,3 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     </div>
   )
 }
-

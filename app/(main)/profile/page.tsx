@@ -65,11 +65,7 @@ export default async function MyProfilePage() {
             </div>
             
             <p className="text-sm text-gray-500 font-medium">
-<<<<<<< HEAD
               {profile?.department || 'Departemen belum diisi'} • {profile?.nim ? `NRP: ${profile.nim}` : 'NRP belum diisi'}
-=======
-              {profile?.department || 'Universitas'} • Angkatan {profile?.nim ? '20' + profile.nim.substring(2, 4) : '2021'}
->>>>>>> a0dc1e960baa4594e534a7b985ae3a7d93887ddc
             </p>
             
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4 pt-2">
@@ -79,17 +75,12 @@ export default async function MyProfilePage() {
               >
                 Edit Profil
               </Link>
-<<<<<<< HEAD
               <Link 
                 href={ROUTES.PROFILE_PUBLIC(user.id)} 
                 className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors"
               >
                 Lihat Profil Publik
               </Link>
-=======
-              <button className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors">
-                Bagikan
-              </button>
               <form action={logoutAction} className="inline-flex">
                 <button 
                   type="submit" 
@@ -98,7 +89,6 @@ export default async function MyProfilePage() {
                   Keluar
                 </button>
               </form>
->>>>>>> a0dc1e960baa4594e534a7b985ae3a7d93887ddc
             </div>
           </div>
         </div>
@@ -139,8 +129,6 @@ export default async function MyProfilePage() {
                 title={product.title}
                 price={product.price}
                 imageUrl={product.image_urls?.[0]}
-
-
                 status={product.status}
                 isNegotiable={product.is_negotiable}
                 isOwner={true}
@@ -164,4 +152,3 @@ export default async function MyProfilePage() {
     </div>
   )
 }
-
