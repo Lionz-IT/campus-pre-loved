@@ -1,104 +1,96 @@
 'use server'
 
-import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { offerSchema, offerAcceptSchema, offerRejectSchema } from '@/lib/validations/product.schema'
-import type { ActionResult } from '@/types'
-import { ROUTES } from '@/lib/constants/routes'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { chats, messages, products, profiles } from '@/lib/db/schema'
+import { eq, and, desc, or, inArray, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { ROUTES } from '@/lib/constants/routes'
+import type { ActionResult } from '@/types'
+import { offerSchema, offerAcceptSchema, offerRejectSchema } from '@/lib/validations/product.schema'
 
 
 export async function createChatRoomAction(
   productId: string,
   sellerId:  string,
 ): Promise<ActionResult<{ chatId: string }>> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
   if (user.id === sellerId) return { success: false, error: 'Kamu tidak bisa chat dengan dirimu sendiri' }
 
+  const newChat = await db.insert(chats)
+    .values({ product_id: productId, buyer_id: user.id as string, seller_id: sellerId })
+    .onConflictDoUpdate({
+      target: [chats.product_id, chats.buyer_id],
+      set: { product_id: productId }
+    })
+    .returning({ id: chats.id })
 
-  const { data, error } = await supabase
-    .from('chats')
-    .upsert(
-      { product_id: productId, buyer_id: user.id, seller_id: sellerId },
-      { onConflict: 'product_id,buyer_id', ignoreDuplicates: false },
-    )
-    .select('id')
-    .single()
-
-  if (error) return { success: false, error: error.message }
-  return { success: true, data: { chatId: data.id } }
+  if (!newChat[0]) return { success: false, error: 'Gagal membuat atau mendapatkan chat' }
+  return { success: true, data: { chatId: newChat[0].id } }
 }
-
 
 export async function getMyChatsAction() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false as const, error: 'Unauthorized' }
 
-  const { data, error } = await supabase
-    .from('chats')
-    .select(`
-      *,
-      product:products!chats_product_id_fkey!inner ( id, title, image_urls, status ),
-      buyer:profiles!chats_buyer_id_fkey!inner     ( id, full_name, avatar_url ),
-      seller:profiles!chats_seller_id_fkey!inner   ( id, full_name, avatar_url )
-    `)
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-    .order('last_message_at', { ascending: false, nullsFirst: false })
+  const data = await db.query.chats.findMany({
+    where: or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string)),
+    orderBy: desc(chats.last_message_at),
+    with: {
+        product: { columns: { id: true, title: true, image_urls: true, status: true } },
+        buyer: { columns: { id: true, full_name: true, avatar_url: true } },
+        seller: { columns: { id: true, full_name: true, avatar_url: true } }
+    }
+  })
 
-  if (error) return { success: false as const, error: error.message }
   return { success: true as const, data: data ?? [] }
 }
-
 
 export async function getChatMessagesAction(chatId: string) {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false as const, error: 'Unauthorized' }
 
-  const { data, error } = await supabase
-    .from('messages')
-    .select(`
-      *,
-      sender:profiles!messages_sender_id_fkey!inner ( id, full_name, avatar_url )
-    `)
-    .eq('chat_id', chatId)
-    .order('created_at', { ascending: true })
+  const data = await db.query.messages.findMany({
+    where: eq(messages.chat_id, chatId),
+    orderBy: desc(messages.created_at),
+    with: {
+      sender: { columns: { id: true, full_name: true, avatar_url: true } }
+    }
+  })
 
-  if (error) return { success: false as const, error: error.message }
   return { success: true as const, data: data ?? [] }
 }
 
-
 export async function sendMessageAction(chatId: string, content: string) {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false as const, error: 'Unauthorized' }
 
-  const { data, error } = await supabase.from('messages').insert({
+  const newMessage = await db.insert(messages).values({
     chat_id:      chatId,
-    sender_id:    user.id,
+    sender_id:    user.id as string,
     message_type: 'text',
     content:      content.trim(),
-  }).select(`
-    *,
-    sender:profiles!messages_sender_id_fkey!inner ( id, full_name, avatar_url )
-  `).single()
+  }).returning()
 
-  if (error) return { success: false as const, error: error.message }
+  await db.update(chats)
+    .set({ last_message_at: new Date() })
+    .where(eq(chats.id, chatId))
   
   revalidatePath(ROUTES.CHAT_ROOM(chatId))
-  return { success: true as const, data }
+  return { success: true as const, data: newMessage[0] }
 }
-
 
 export async function sendOfferAction(
   chatId:  string,
   payload: { offered_price: number; original_price?: number; note?: string },
 ): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const parsed = offerSchema.safeParse(payload)
@@ -106,24 +98,22 @@ export async function sendOfferAction(
     return { success: false, error: parsed.error.flatten().fieldErrors.offered_price?.[0] ?? 'Data penawaran tidak valid' }
   }
 
-  const { error } = await supabase.from('messages').insert({
+  await db.insert(messages).values({
     chat_id:      chatId,
-    sender_id:    user.id,
+    sender_id:    user.id as string,
     message_type: 'offer',
     payload:      parsed.data,
   })
 
-  if (error) return { success: false, error: error.message }
   return { success: true }
 }
-
 
 export async function acceptOfferAction(
   chatId:  string,
   payload: { agreed_price: number; meet_point: string; meet_time: string },
 ): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const parsed = offerAcceptSchema.safeParse(payload)
@@ -132,46 +122,36 @@ export async function acceptOfferAction(
     return { success: false, error: firstError ?? 'Data tidak valid' }
   }
 
-  const { data: chat, error: chatError } = await supabase
-    .from('chats')
-    .select('product_id, buyer_id, seller_id')
-    .eq('id', chatId)
-    .single()
+  const chat = await db.query.chats.findFirst({
+    where: eq(chats.id, chatId),
+    columns: { product_id: true, seller_id: true }
+  })
 
-  if (chatError || !chat) return { success: false, error: 'Chat tidak ditemukan' }
+  if (!chat) return { success: false, error: 'Chat tidak ditemukan' }
   if (user.id !== chat.seller_id) return { success: false, error: 'Hanya penjual yang dapat menerima tawaran' }
 
-  const { error: productUpdateError } = await supabase
-    .from('products')
-    .update({ status: 'sold' })
-    .eq('id', chat.product_id)
-    .eq('seller_id', user.id)
+  await db.update(products)
+    .set({ status: 'sold' })
+    .where(eq(products.id, chat.product_id))
 
-  if (productUpdateError) {
-    console.error('Gagal mengupdate status produk:', productUpdateError)
-  }
-
-  const { error } = await supabase.from('messages').insert({
+  await db.insert(messages).values({
     chat_id:      chatId,
-    sender_id:    user.id,
+    sender_id:    user.id as string,
     message_type: 'offer_accept',
     payload:      parsed.data,
   })
-
-  if (error) return { success: false, error: error.message }
   
   revalidatePath(ROUTES.CHAT_ROOM(chatId))
   revalidatePath('/chats')
   return { success: true }
 }
 
-
 export async function rejectOfferAction(
   chatId:  string,
   payload: { counter_offer?: number; reason?: string },
 ): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
   const parsed = offerRejectSchema.safeParse(payload)
@@ -179,56 +159,46 @@ export async function rejectOfferAction(
     return { success: false, error: 'Data tidak valid' }
   }
 
-  const { error } = await supabase.from('messages').insert({
+  await db.insert(messages).values({
     chat_id:      chatId,
-    sender_id:    user.id,
+    sender_id:    user.id as string,
     message_type: 'offer_reject',
     payload:      parsed.data,
   })
 
-  if (error) return { success: false, error: error.message }
   return { success: true }
 }
 
-
 export async function markMessagesReadAction(chatId: string): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { error } = await supabase
-    .from('messages')
-    .update({ is_read: true })
-    .eq('chat_id', chatId)
-    .eq('is_read', false)
-    .neq('sender_id', user.id)
+  await db.update(messages)
+    .set({ is_read: true })
+    .where(and(eq(messages.chat_id, chatId), eq(messages.is_read, false), eq(messages.sender_id, user.id as string)))
 
-  if (error) return { success: false, error: error.message }
   revalidatePath(ROUTES.CHAT_ROOM(chatId))
   return { success: true }
 }
 
-
 export async function getUnreadCountAction(): Promise<ActionResult<number>> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: true, data: 0 }
 
-  const { data: chats } = await supabase
-    .from('chats')
-    .select('id')
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+  const userChats = await db.select({ id: chats.id }).from(chats).where(or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string)))
+  if (userChats.length === 0) return { success: true, data: 0 }
 
-  if (!chats || chats.length === 0) return { success: true, data: 0 }
+  const chatIds = userChats.map((c) => c.id)
+  
+  const unreadMessages = await db.select({ count: sql<number>`count(*)` })
+    .from(messages)
+    .where(and(
+        inArray(messages.chat_id, chatIds),
+        eq(messages.is_read, false),
+        eq(messages.sender_id, user.id as string)
+    ))
 
-  const chatIds = chats.map((c) => c.id)
-  const { count, error } = await supabase
-    .from('messages')
-    .select('*', { count: 'exact', head: true })
-    .in('chat_id', chatIds)
-    .eq('is_read', false)
-    .neq('sender_id', user.id)
-
-  if (error) return { success: false, error: error.message }
-  return { success: true, data: count ?? 0 }
+  return { success: true, data: Number(unreadMessages[0].count) ?? 0 }
 }

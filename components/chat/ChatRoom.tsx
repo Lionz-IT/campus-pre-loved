@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { useChat } from '@/hooks/useChat'
 import { sendOfferAction } from '@/features/chats/actions'
 import { formatPrice, getInitials } from '@/lib/utils'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3 } from "@/lib/s3";
 import type { MessageWithSender, Product } from '@/types'
 
 import MessageBubble from './MessageBubble'
@@ -51,26 +52,20 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
 
     const toastId = toast.loading('Mengunggah gambar...')
     try {
-      const supabase = createSupabaseBrowserClient()
       const fileExt = file.name.split('.').pop()
-      const fileName = `${crypto.randomUUID()}.${fileExt}`
-      const filePath = `${currentUserId}/${fileName}`
-
-      const { error } = await supabase.storage
-        .from('chat-attachments')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (error) {
-        toast.error(`Gagal mengunggah: ${error.message}`, { id: toastId })
-        return
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-attachments')
-        .getPublicUrl(filePath)
+      const fileName = `${currentUserId}/${crypto.randomUUID()}.${fileExt}`
+      
+      const arrayBuffer = await file.arrayBuffer()
+      const fileBuffer = Buffer.from(arrayBuffer)
+      
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.NEXT_PUBLIC_S3_CHAT_ATTACHMENTS_BUCKET,
+        Key: fileName,
+        Body: fileBuffer,
+        ContentType: file.type,
+      }))
+      
+      const publicUrl = `https://${process.env.NEXT_PUBLIC_S3_CHAT_ATTACHMENTS_BUCKET}.s3.amazonaws.com/${fileName}`
 
       await sendMessage(publicUrl)
       toast.success('Gambar berhasil dikirim!', { id: toastId })
@@ -285,4 +280,3 @@ export default function ChatRoom({ chatId, initialMessages, currentUserId, isSel
     </div>
   )
 }
-

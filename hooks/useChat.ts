@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef, useOptimistic, startTransition } from 'react'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { sendMessageAction, markMessagesReadAction } from '@/features/chats/actions'
 import type { Message, MessageWithSender } from '@/types'
+import { io } from 'socket.io-client'
+
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
 
 export function useChat(chatId: string, initialMessages: MessageWithSender[], currentUserId?: string) {
   const [messages, setMessages]   = useState<MessageWithSender[]>(initialMessages)
@@ -16,7 +18,6 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[], cu
     (state: MessageWithSender[], newMessage: MessageWithSender) => [...state, newMessage]
   )
 
-  // Tandai pesan sudah dibaca saat komponen di-mount
   useEffect(() => {
     markMessagesReadAction(chatId).catch(console.error)
   }, [chatId])
@@ -26,42 +27,17 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[], cu
   }, [optimisticMessages])
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient()
+    socket.emit("join-chat", chatId)
 
-    const channel = supabase
-      .channel(`chat-room:${chatId}`)
-      .on(
-        'postgres_changes',
-        {
-          event:  'INSERT',
-          schema: 'public',
-          table:  'messages',
-          filter: `chat_id=eq.${chatId}`,
-        },
-        async (payload) => {
-          const rawMessage = payload.new as Message
-
-          const { data: sender } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .eq('id', rawMessage.sender_id)
-            .single()
-
-          const newMessage: MessageWithSender = {
-            ...rawMessage,
-            sender: sender ?? { id: rawMessage.sender_id, full_name: 'Unknown', avatar_url: null },
-          }
-
-          setMessages((prev) => {
+    socket.on("new-message", (newMessage: MessageWithSender) => {
+        setMessages((prev) => {
             if (prev.some((m) => m.id === newMessage.id)) return prev
             return [...prev, newMessage]
-          })
-        },
-      )
-      .subscribe()
+        })
+    })
 
     return () => {
-      supabase.removeChannel(channel)
+        socket.off("new-message")
     }
   }, [chatId])
 
@@ -70,28 +46,12 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[], cu
       if (!content.trim()) return
       setError(null)
       
-      if (currentUserId) {
-        const tempId = crypto.randomUUID()
-        startTransition(() => {
-          addOptimisticMessage({
-            id: tempId,
-            chat_id: chatId,
-            sender_id: currentUserId,
-            message_type: 'text',
-            content,
-            payload: null,
-            is_read: false,
-            created_at: new Date().toISOString(),
-            sender: { id: currentUserId, full_name: 'Me', avatar_url: null }
-          })
-        })
-      }
-
       setIsSending(true)
       const result = await sendMessageAction(chatId, content)
       if (!result.success) {
         setError(result.error)
       } else if (result.data) {
+        socket.emit("send-message", result.data)
         setMessages((prev) => {
           if (prev.some((m) => m.id === result.data!.id)) return prev
           return [...prev, result.data!]
@@ -100,7 +60,7 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[], cu
 
       setIsSending(false)
     },
-    [chatId, currentUserId, addOptimisticMessage],
+    [chatId]
   )
 
   return { messages: optimisticMessages, sendMessage, isSending, error, bottomRef }

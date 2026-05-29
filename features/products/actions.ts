@@ -1,18 +1,24 @@
 'use server'
 
-import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { productSchema } from '@/lib/validations/product.schema'
-import { generateStorageFileName } from '@/lib/utils'
-import { ROUTES } from '@/lib/constants/routes'
-import type { ActionResult } from '@/types'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { products, profiles, messages } from '@/lib/db/schema'
+import { eq, and, desc, gte, lte, ilike } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { ROUTES } from '@/lib/constants/routes'
+import type { ActionResult } from '@/types'
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3 } from "@/lib/s3";
+import { productSchema } from '@/lib/validations/product.schema'
+import type { Database } from '@/types/database.types'
 
+type ProductCategory = Database['public']['Enums']['product_category']
 
 export async function createProductAction(formData: FormData): Promise<ActionResult<{ id: string }>> {
   try {
-    const supabase = await createSupabaseServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const session = await auth()
+    const user = session?.user
     if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
 
     const raw = Object.fromEntries(formData)
@@ -43,85 +49,46 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
       if (file.size > MAX_FILE_SIZE) return { success: false, error: `File ${file.name} terlalu besar (maksimal 5MB)` }
       if (!ALLOWED_TYPES.includes(file.type)) return { success: false, error: `Format file ${file.name} tidak didukung` }
 
-      const filePath = generateStorageFileName(user.id, file.name)
+      const fileName = `${user.id}/${Date.now()}-${file.name}`
       
-      // Convert standard File object to ArrayBuffer for Node-side upload
       const arrayBuffer = await file.arrayBuffer()
       const fileBuffer = Buffer.from(arrayBuffer)
       
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, fileBuffer, {
-          contentType: file.type,
-          upsert: true
-        })
-      if (uploadError) return { success: false, error: `Gagal upload foto: ${uploadError.message}` }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath)
-      imageUrls.push(publicUrl)
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: fileName,
+        Body: fileBuffer,
+        ContentType: file.type,
+      }))
+      
+      imageUrls.push(`https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`)
     }
 
-    // Pastikan profile seller sudah ada di tabel public.profiles (menghindari products_seller_id_fkey)
-    const { data: profileExists, error: profileCheckError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', user.id)
-      .maybeSingle()
-
-    if (profileCheckError) {
-      console.error('Error checking user profile existence:', profileCheckError)
-    }
-
-    if (!profileExists) {
-      // Profile tidak ditemukan, kita buat profil default secara otomatis
-      const defaultFullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Mahasiswa PENS'
-      const { error: profileInsertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: user.id,
-          campus_email: user.email!,
-          full_name: defaultFullName,
-        })
-      if (profileInsertError) {
-        console.error('Failed to auto-create missing user profile:', profileInsertError)
-        return { success: false, error: `Gagal menyimpan produk: profil pengguna tidak ditemukan di database. (${profileInsertError.message})` }
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('products')
-      .insert({
+    const newProduct = await db.insert(products).values({
         ...parsed.data,
         price: typeof parsed.data.price === 'number' ? parsed.data.price : null,
-        seller_id:    user.id,
+        seller_id:    user.id as string,
         image_urls:   imageUrls,
-      })
-      .select('id')
-      .single()
+    }).returning({ id: products.id })
 
-    if (error) return { success: false, error: `Gagal menyimpan produk: ${error.message}` }
+    if (!newProduct[0]) return { success: false, error: `Gagal menyimpan produk` }
     
     revalidatePath(ROUTES.HOME)
     revalidatePath(ROUTES.PRODUCTS)
-    return { success: true, data: { id: data.id } }
+    return { success: true, data: { id: newProduct[0].id } }
   } catch (err: any) {
     console.error('Error in createProductAction:', err)
     return { success: false, error: err?.message || 'Terjadi kesalahan sistem internal' }
   }
 }
 
-
-
 export async function updateProductAction(
   productId: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
-
 
   const raw = Object.fromEntries(formData)
   const parsed = productSchema.safeParse({
@@ -134,70 +101,56 @@ export async function updateProductAction(
     return { success: false, error: firstError ?? 'Data tidak valid' }
   }
 
-  const { error } = await supabase
-    .from('products')
-    .update({
+  await db.update(products)
+    .set({
       ...parsed.data,
       price: typeof parsed.data.price === 'number' ? parsed.data.price : null,
     })
-    .eq('id', productId)
-    .eq('seller_id', user.id)
+    .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
 
-  if (error) return { success: false, error: error.message }
   revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
   revalidatePath(ROUTES.PRODUCTS)
   return { success: true }
 }
 
-
 export async function deleteProductAction(productId: string): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { error } = await supabase
-    .from('products')
-    .update({ is_deleted: true })
-    .eq('id', productId)
-    .eq('seller_id', user.id)
+  await db.update(products)
+    .set({ is_deleted: true })
+    .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
 
-  if (error) return { success: false, error: error.message }
   revalidatePath(ROUTES.PRODUCTS)
   revalidatePath(ROUTES.PROFILE)
   redirect(ROUTES.PROFILE)
 }
-
 
 export async function markAsSoldAction(
   productId: string,
   chatId: string,
   quantitySold: number = 1
 ): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { data: product, error: fetchError } = await supabase
-    .from('products')
-    .select('stock')
-    .eq('id', productId)
-    .eq('seller_id', user.id)
-    .single()
+  const product = await db.query.products.findFirst({
+    where: and(eq(products.id, productId), eq(products.seller_id, user.id as string)),
+    columns: { stock: true }
+  })
     
-  if (fetchError || !product) return { success: false, error: 'Produk tidak ditemukan' }
+  if (!product) return { success: false, error: 'Produk tidak ditemukan' }
   if (product.stock < quantitySold) return { success: false, error: 'Stok tidak mencukupi' }
 
-  const { error } = await supabase
-    .from('products')
-    .update({ stock: product.stock - quantitySold })
-    .eq('id', productId)
-    .eq('seller_id', user.id)
+  await db.update(products)
+    .set({ stock: product.stock - quantitySold })
+    .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
 
-  if (error) return { success: false, error: error.message }
-
-  await supabase.from('messages').insert({
+  await db.insert(messages).values({
     chat_id:      chatId,
-    sender_id:    user.id,
+    sender_id:    user.id as string,
     message_type: 'system',
     content:      `Transaksi selesai! Barang sudah terjual (${quantitySold} item). Terima kasih!`,
     payload:      { event: 'item_sold', from: 'available', to: 'sold', quantity: quantitySold },
@@ -210,36 +163,29 @@ export async function markAsSoldAction(
   return { success: true }
 }
 
-
 export async function revertSoldAction(
   productId: string,
   chatId: string,
   quantityToReturn: number = 1
 ): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
   
-  const { data: product, error: fetchError } = await supabase
-    .from('products')
-    .select('stock')
-    .eq('id', productId)
-    .eq('seller_id', user.id)
-    .single()
+  const product = await db.query.products.findFirst({
+    where: and(eq(products.id, productId), eq(products.seller_id, user.id as string)),
+    columns: { stock: true }
+  })
     
-  if (fetchError || !product) return { success: false, error: 'Produk tidak ditemukan' }
+  if (!product) return { success: false, error: 'Produk tidak ditemukan' }
 
-  const { error } = await supabase
-    .from('products')
-    .update({ stock: product.stock + quantityToReturn })
-    .eq('id', productId)
-    .eq('seller_id', user.id)
+  await db.update(products)
+    .set({ stock: product.stock + quantityToReturn })
+    .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
 
-  if (error) return { success: false, error: error.message }
-
-  await supabase.from('messages').insert({
+  await db.insert(messages).values({
     chat_id:      chatId,
-    sender_id:    user.id,
+    sender_id:    user.id as string,
     message_type: 'system',
     content:      `Penjualan dibatalkan. Barang (${quantityToReturn} item) kembali tersedia ke stok.`,
     payload:      { event: 'sale_reverted', from: 'sold', to: 'available', quantity: quantityToReturn },
@@ -252,22 +198,17 @@ export async function revertSoldAction(
   return { success: true }
 }
 
-
 export async function toggleProductStatusAction(
   productId: string,
   newStatus: 'available' | 'sold',
 ): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { error } = await supabase
-    .from('products')
-    .update({ status: newStatus })
-    .eq('id', productId)
-    .eq('seller_id', user.id)
-
-  if (error) return { success: false, error: error.message }
+  await db.update(products)
+    .set({ status: newStatus })
+    .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
 
   revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
   revalidatePath(ROUTES.PRODUCT_EDIT(productId))
@@ -276,18 +217,6 @@ export async function toggleProductStatusAction(
   revalidatePath(ROUTES.PROFILE)
   return { success: true }
 }
-
-
-import type { Database } from '@/types/database.types'
-
-type ProductCategory = Database['public']['Enums']['product_category']
-
-const PRODUCT_WITH_SELLER_SELECT = `
-  *,
-  seller:profiles!products_seller_id_fkey!inner (
-    id, full_name, avatar_url, rating, whatsapp_number
-  )
-` as const
 
 export async function getMarketplaceFeedAction(params?: {
   category?:  string
@@ -299,43 +228,57 @@ export async function getMarketplaceFeedAction(params?: {
   page?:      number
   limit?:     number
 }) {
-  const supabase = await createSupabaseServerClient()
   const { category, search, sort, condition, min_price, max_price, page = 1, limit = 20 } = params ?? {}
-  const from = (page - 1) * limit
-  const to   = from + limit - 1
+  const offset = (page - 1) * limit
 
-  let query = supabase
-    .from('products')
-    .select(PRODUCT_WITH_SELLER_SELECT)
-    .eq('status', 'available')
-    .eq('is_deleted', false)
-    .range(from, to)
+  const conditions = [
+    eq(products.status, 'available'),
+    eq(products.is_deleted, false)
+  ]
 
   if (category && category !== 'all') {
-    query = query.eq('category', category as ProductCategory)
+    conditions.push(eq(products.category, category as ProductCategory))
   }
   if (condition && condition !== 'all') {
-    query = query.eq('condition', condition)
+    conditions.push(eq(products.condition, condition))
   }
   if (min_price) {
-    query = query.gte('price', parseInt(min_price, 10))
+    conditions.push(gte(products.price, parseInt(min_price, 10)))
   }
   if (max_price) {
-    query = query.lte('price', parseInt(max_price, 10))
+    conditions.push(lte(products.price, parseInt(max_price, 10)))
   }
   if (search) {
-    query = query.ilike('title', `%${search}%`)
+    conditions.push(ilike(products.title, `%${search}%`))
   }
 
-  if (sort === 'price_asc') {
-    query = query.order('price', { ascending: true, nullsFirst: false })
-  } else if (sort === 'price_desc') {
-    query = query.order('price', { ascending: false, nullsFirst: false })
-  } else {
-    query = query.order('created_at', { ascending: false })
-  }
+  let query = db.select({
+      id: products.id,
+      title: products.title,
+      price: products.price,
+      listing_type: products.listing_type,
+      category: products.category,
+      condition: products.condition,
+      status: products.status,
+      image_urls: products.image_urls,
+      is_negotiable: products.is_negotiable,
+      campus_location: products.campus_location,
+      created_at: products.created_at,
+      seller_name: profiles.full_name,
+      seller_avatar: profiles.avatar_url,
+      seller_rating: profiles.rating,
+  })
+  .from(products)
+  .innerJoin(profiles, eq(products.seller_id, profiles.id))
+  .where(and(...conditions))
+  .limit(limit)
+  .offset(offset)
+  .orderBy(
+    sort === 'price_asc' ? products.price : 
+    sort === 'price_desc' ? desc(products.price) : 
+    desc(products.created_at)
+  )
 
-  const { data, error } = await query
-  if (error) return { success: false, error: error.message }
+  const data = await query
   return { success: true, data: data ?? [] }
 }

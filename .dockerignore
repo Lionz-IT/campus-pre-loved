@@ -1,0 +1,22 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build & Cache
+.next
+.git
+dist
+.cache
+.turbo
+
+# Environment
+.env
+.env*
+
+# IDE/Config
+.vscode
+.idea
+.sisyphus
+README.md
+Dockerfile
+.dockerignore

@@ -1,96 +1,81 @@
 'use server'
 
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { wishlists, products, profiles } from '@/lib/db/schema'
+import { eq, and, desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { ROUTES } from '@/lib/constants/routes'
 import type { ActionResult } from '@/types'
 
 
 export async function toggleWishlistAction(productId: string): Promise<ActionResult<{ wishlisted: boolean }>> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
 
-  const { data: existing } = await supabase
-    .from('wishlists')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('product_id', productId)
-    .maybeSingle()
+  const existing = await db.query.wishlists.findFirst({
+    where: and(eq(wishlists.user_id, user.id as string), eq(wishlists.product_id, productId)),
+  })
 
   if (existing) {
-    const { error } = await supabase
-      .from('wishlists')
-      .delete()
-      .eq('id', existing.id)
-
-    if (error) return { success: false, error: error.message }
+    await db.delete(wishlists).where(eq(wishlists.id, existing.id))
     revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
     return { success: true, data: { wishlisted: false } }
   }
 
-  const { error } = await supabase
-    .from('wishlists')
-    .insert({ user_id: user.id, product_id: productId })
-
-  if (error) return { success: false, error: error.message }
+  await db.insert(wishlists).values({ user_id: user.id as string, product_id: productId })
   revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
   return { success: true, data: { wishlisted: true } }
 }
 
 
 export async function checkWishlistAction(productId: string): Promise<ActionResult<{ wishlisted: boolean }>> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: true, data: { wishlisted: false } }
 
-  const { data, error } = await supabase
-    .from('wishlists')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('product_id', productId)
-    .maybeSingle()
+  const data = await db.query.wishlists.findFirst({
+    where: and(eq(wishlists.user_id, user.id as string), eq(wishlists.product_id, productId)),
+  })
 
-  if (error) return { success: false, error: error.message }
   return { success: true, data: { wishlisted: !!data } }
 }
 
 
 export async function getWishlistAction() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: false as const, error: 'Kamu harus login terlebih dahulu' }
 
-  const { data, error } = await supabase
-    .from('wishlists')
-    .select(`
-      product_id,
-      products:product_id!inner (
-        *,
-        seller:profiles!products_seller_id_fkey!inner (id, full_name, avatar_url)
-      )
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+  const data = await db.query.wishlists.findMany({
+    where: eq(wishlists.user_id, user.id as string),
+    orderBy: desc(wishlists.created_at),
+    with: {
+      product: {
+        with: {
+          seller: {
+            columns: { id: true, full_name: true, avatar_url: true }
+          }
+        }
+      }
+    }
+  })
 
-  if (error) return { success: false as const, error: error.message }
+  const productsData = (data ?? []).map((w) => w.product)
 
-  const products = (data ?? []).map((w) => w.products)
-
-  return { success: true as const, data: products }
+  return { success: true as const, data: productsData }
 }
 
 
 export async function getWishlistIdsAction(): Promise<ActionResult<string[]>> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return { success: true, data: [] }
 
-  const { data, error } = await supabase
-    .from('wishlists')
-    .select('product_id')
-    .eq('user_id', user.id)
+  const data = await db.select({ product_id: wishlists.product_id })
+    .from(wishlists)
+    .where(eq(wishlists.user_id, user.id as string))
 
-  if (error) return { success: false, error: error.message }
   return { success: true, data: (data ?? []).map((w) => w.product_id) }
 }

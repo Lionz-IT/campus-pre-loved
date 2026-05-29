@@ -49,5 +49,10 @@ db.sql
 .sisyphus/
 **/AGENTS.md
 
+# AWS
+.aws/
+*.pem
+*.pub
+
 # Testing
 .vitest/
