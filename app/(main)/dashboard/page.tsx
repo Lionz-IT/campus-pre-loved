@@ -7,7 +7,6 @@ import { ProductCard } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import CategoryIcon from '@/components/ui/CategoryIcon'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export const metadata: Metadata = {
   title: 'Dashboard | Campus Pre-loved',
@@ -58,12 +57,10 @@ export default async function DashboardPage({
           <div className="flex-1 w-full md:w-auto flex justify-center md:justify-end">
             <div className="bg-white p-4 pb-10 shadow-xl rounded-sm rotate-3 hover:rotate-6 transition-transform duration-300">
               <div className="relative w-full max-w-sm aspect-[4/3] bg-gray-100 overflow-hidden">
-                <Image 
+                <img 
                   src="https://picsum.photos/seed/books/600/400" 
                   alt="Books Polaroid" 
-                  fill
                   className="w-full h-full object-cover"
-                  unoptimized
                 />
               </div>
             </div>
