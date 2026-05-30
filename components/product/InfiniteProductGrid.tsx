@@ -51,7 +51,7 @@ export default function InfiniteProductGrid({ initialProducts, filters, pageSize
       if (result.success && result.data) {
         if (result.data.length < pageSize) setHasMore(false)
         if (result.data.length > 0) {
-          setProducts((prev) => [...prev, ...result.data!])
+          setProducts((prev) => [...prev, ...result.data!] as any)
           setPage((p) => p + 1)
         } else {
           setHasMore(false)

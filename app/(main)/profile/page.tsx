@@ -74,7 +74,7 @@ export default async function MyProfilePage() {
                 Edit Profil
               </Link>
               <Link 
-                href={ROUTES.PROFILE_PUBLIC(user.id)} 
+                href={ROUTES.PROFILE_PUBLIC(user.id as string)} 
                 className="inline-flex items-center justify-center px-6 py-2 border-2 border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100 text-sm font-semibold rounded-xl transition-colors"
               >
                 Lihat Profil Publik

@@ -54,7 +54,7 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[], cu
         socket.emit("send-message", result.data)
         setMessages((prev) => {
           if (prev.some((m) => m.id === result.data!.id)) return prev
-          return [...prev, result.data!]
+          return [...prev, result.data!] as any
         })
       }
 

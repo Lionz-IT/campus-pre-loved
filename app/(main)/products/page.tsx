@@ -54,7 +54,7 @@ export default async function ProductsBrowsePage({
             />
           ) : (
             <InfiniteProductGrid
-              initialProducts={products}
+              initialProducts={products as any}
               filters={{ category, search: q, sort, condition, min_price, max_price }}
               pageSize={24}
               currentUserId={user?.id}
