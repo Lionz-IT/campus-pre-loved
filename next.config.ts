@@ -14,14 +14,6 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'vpeixvydzffkcdvysngq.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lznbwpxvakjhyjbfvfqk.supabase.co',
-      },
-      {
-        protocol: 'https',
         hostname: 'pens-marketplace-storage.s3.ap-southeast-3.amazonaws.com',
       },
     ],
