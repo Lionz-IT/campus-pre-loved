@@ -1,23 +1,30 @@
+# Stage 1: Install dependencies
 FROM node:20-alpine AS base
+# Tambahkan libc6-compat agar native dependencies bisa berjalan di Alpine
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# Stage 2: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=base /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
+# Stage 3: Runner
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV HOSTNAME=0.0.0.0
-ENV PORT=3000
+# Tambahkan group/user agar lebih aman
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
 
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 EXPOSE 3000
 CMD ["node", "server.js"]
