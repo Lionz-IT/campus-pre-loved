@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: campus-preloved-app
+    ports:
+      - "3000:3000"
+    # Ini akan otomatis membaca semua variabel dari file .env di folder yang sama
+    env_file:
+      - .env
+    restart: always
