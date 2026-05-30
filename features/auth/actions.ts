@@ -8,6 +8,7 @@ import { hash } from 'bcryptjs'
 import { registerSchema, loginSchema } from '@/lib/validations/auth.schema'
 import type { ActionResult } from '@/types'
 import { revalidatePath } from 'next/cache'
+import { sendEmail } from '@/lib/email'
 import { redirect } from 'next/navigation'
 import { ROUTES } from '@/lib/constants/routes'
 
@@ -42,6 +43,17 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     nim:          parsed.data.nim,
     campus_email: parsed.data.campus_email,
     password_hash,
+  })
+
+  await sendEmail({
+    to: parsed.data.campus_email,
+    subject: "Selamat Datang di Campus Preloved!",
+    html: `
+      <h1>Halo ${parsed.data.full_name},</h1>
+      <p>Terima kasih telah mendaftar di Campus Preloved. Akun Anda berhasil dibuat.</p>
+      <p>Silakan cek email universitas Anda secara berkala untuk informasi lebih lanjut mengenai verifikasi akun Anda.</p>
+      <p><a href="https://mail.student.pens.ac.id/" target="_blank">Klik di sini untuk membuka webmail PENS Anda</a></p>
+    `,
   })
 
   return { success: true }

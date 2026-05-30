@@ -26,9 +26,6 @@ export default function RegisterPage() {
     } else if (result && result.success) {
       setSuccess(true)
       toast.success('Akun berhasil dibuat! Cek email untuk verifikasi.')
-      setTimeout(() => {
-        window.location.href = ROUTES.VERIFY_EMAIL
-      }, 2500)
     }
   }
 
@@ -74,7 +71,15 @@ export default function RegisterPage() {
             </div>
           </div>
           <h3 className="text-2xl font-extrabold text-gray-900 mb-2 animate-fade-in-up-custom">Pendaftaran Berhasil!</h3>
-          <p className="text-gray-500 text-sm animate-fade-in-up-custom">Silakan verifikasi email kampus Anda...</p>
+          <p className="text-gray-500 text-sm animate-fade-in-up-custom mb-4">Silakan verifikasi email kampus Anda melalui tautan di bawah ini:</p>
+          <a 
+            href="https://mail.student.pens.ac.id/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors animate-fade-in-up-custom"
+          >
+            Buka Webmail PENS
+          </a>
         </div>
       )}
 

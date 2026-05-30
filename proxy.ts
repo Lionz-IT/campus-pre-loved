@@ -13,6 +13,7 @@ export const proxy = auth((req) => {
 
   const isPublicRoute =
     pathname === '/' ||
+    pathname === '/dashboard' ||
     pathname === '/products' ||
     (pathname.startsWith('/products/') && !pathname.endsWith('/edit') && !pathname.includes('/new'))
 

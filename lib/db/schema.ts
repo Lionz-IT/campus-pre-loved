@@ -21,6 +21,7 @@ export const profiles = pgTable("profiles", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
   password_hash: text("password_hash").notNull(),
+  is_verified: boolean("is_verified").default(false).notNull(),
 });
 
 export const products = pgTable("products", {
@@ -79,6 +80,14 @@ export const reviews = pgTable("reviews", {
   comment: text("comment"),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const verification_tokens = pgTable("verification_tokens", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()`),
+  user_id: text("user_id").references(() => profiles.id).notNull(),
+  token: text("token").notNull().unique(),
+  expires_at: timestamp("expires_at").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
 // ── Relations ──────────────────────────────────────────────
@@ -163,5 +172,12 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
     fields: [reviews.reviewer_id],
     references: [profiles.id],
     relationName: "reviewer_reviews",
+  }),
+}));
+
+export const verificationTokensRelations = relations(verification_tokens, ({ one }) => ({
+  user: one(profiles, {
+    fields: [verification_tokens.user_id],
+    references: [profiles.id],
   }),
 }));
