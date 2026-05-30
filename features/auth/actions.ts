@@ -9,7 +9,9 @@ import { registerSchema, loginSchema } from '@/lib/validations/auth.schema'
 import type { ActionResult } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { sendEmail } from '@/lib/email'
+import { createVerificationToken } from '@/features/auth/verification.actions'
 import { redirect } from 'next/navigation'
+
 import { ROUTES } from '@/lib/constants/routes'
 
 
@@ -37,24 +39,27 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
 
   const password_hash = await hash(parsed.data.password, 12)
 
-  await db.insert(profiles).values({
+  const [newUser] = await db.insert(profiles).values({
     full_name:    parsed.data.full_name,
     department:   parsed.data.department,
     nim:          parsed.data.nim,
     campus_email: parsed.data.campus_email,
     password_hash,
-  })
+  }).returning({ id: profiles.id });
+
+  const token = await createVerificationToken(newUser.id);
+  const verificationLink = `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`;
 
   await sendEmail({
     to: parsed.data.campus_email,
-    subject: "Selamat Datang di Campus Preloved!",
+    subject: "Verifikasi Akun Campus Preloved",
     html: `
       <h1>Halo ${parsed.data.full_name},</h1>
-      <p>Terima kasih telah mendaftar di Campus Preloved. Akun Anda berhasil dibuat.</p>
-      <p>Silakan cek email universitas Anda secara berkala untuk informasi lebih lanjut mengenai verifikasi akun Anda.</p>
-      <p><a href="https://mail.student.pens.ac.id/" target="_blank">Klik di sini untuk membuka webmail PENS Anda</a></p>
+      <p>Terima kasih telah mendaftar di Campus Preloved. Silakan verifikasi akun Anda dengan mengklik tautan di bawah ini:</p>
+      <p><a href="${verificationLink}">Verifikasi Akun Saya</a></p>
+      <p>Tautan ini akan kedaluwarsa dalam 24 jam.</p>
     `,
-  })
+  });
 
   return { success: true }
 }
