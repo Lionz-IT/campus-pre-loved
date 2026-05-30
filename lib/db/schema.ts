@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, boolean, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 export const productStatusEnum = pgEnum("product_status", ["available", "sold"]);
 export const productCategoryEnum = pgEnum("product_category", ["microcontroller", "electronic_component", "module", "tool", "book_module", "laptop_accessory", "clothing", "stationery", "other"]);
@@ -80,3 +80,88 @@ export const reviews = pgTable("reviews", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ── Relations ──────────────────────────────────────────────
+
+export const profilesRelations = relations(profiles, ({ many }) => ({
+  products: many(products, { relationName: "seller_products" }),
+  chatsAsBuyer: many(chats, { relationName: "buyer_chats" }),
+  chatsAsSeller: many(chats, { relationName: "seller_chats" }),
+  sentMessages: many(messages, { relationName: "sender_messages" }),
+  wishlists: many(wishlists),
+  reviewsReceived: many(reviews, { relationName: "seller_reviews" }),
+  reviewsWritten: many(reviews, { relationName: "reviewer_reviews" }),
+}));
+
+export const productsRelations = relations(products, ({ one, many }) => ({
+  seller: one(profiles, {
+    fields: [products.seller_id],
+    references: [profiles.id],
+    relationName: "seller_products",
+  }),
+  bookedBy: one(profiles, {
+    fields: [products.booked_by],
+    references: [profiles.id],
+  }),
+  chats: many(chats),
+  wishlists: many(wishlists),
+  reviews: many(reviews),
+}));
+
+export const chatsRelations = relations(chats, ({ one, many }) => ({
+  product: one(products, {
+    fields: [chats.product_id],
+    references: [products.id],
+  }),
+  buyer: one(profiles, {
+    fields: [chats.buyer_id],
+    references: [profiles.id],
+    relationName: "buyer_chats",
+  }),
+  seller: one(profiles, {
+    fields: [chats.seller_id],
+    references: [profiles.id],
+    relationName: "seller_chats",
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  chat: one(chats, {
+    fields: [messages.chat_id],
+    references: [chats.id],
+  }),
+  sender: one(profiles, {
+    fields: [messages.sender_id],
+    references: [profiles.id],
+    relationName: "sender_messages",
+  }),
+}));
+
+export const wishlistsRelations = relations(wishlists, ({ one }) => ({
+  user: one(profiles, {
+    fields: [wishlists.user_id],
+    references: [profiles.id],
+  }),
+  product: one(products, {
+    fields: [wishlists.product_id],
+    references: [products.id],
+  }),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  product: one(products, {
+    fields: [reviews.product_id],
+    references: [products.id],
+  }),
+  seller: one(profiles, {
+    fields: [reviews.seller_id],
+    references: [profiles.id],
+    relationName: "seller_reviews",
+  }),
+  reviewer: one(profiles, {
+    fields: [reviews.reviewer_id],
+    references: [profiles.id],
+    relationName: "reviewer_reviews",
+  }),
+}));

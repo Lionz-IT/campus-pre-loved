@@ -18,13 +18,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         })
 
         if (!user) throw new Error("User not found.")
-        
+
         const isValid = await compare(credentials.password as string, user.password_hash)
-        
+
         if (!isValid) throw new Error("Invalid password.")
 
         return { id: user.id, email: user.campus_email, name: user.full_name }
       },
     }),
   ],
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string
+      }
+      return session
+    },
+  },
+  pages: {
+    signIn: "/login",
+  },
+  session: { strategy: "jwt" },
 })
+
+export async function getCurrentUser() {
+  const session = await auth()
+  return session?.user ?? null
+}
+
+export async function requireAuth() {
+  const user = await getCurrentUser()
+  if (!user) throw new Error("Unauthorized")
+  return user
+}

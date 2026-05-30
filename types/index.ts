@@ -3,36 +3,29 @@
 
 
 
-import type { Database } from './database.types'
+import { profiles, products, chats, messages, wishlists, reviews } from "@/lib/db/schema"
+import { InferSelectModel, InferInsertModel } from "drizzle-orm"
 
+export type Profile = InferSelectModel<typeof profiles>
+export type Product = InferSelectModel<typeof products>
+export type Chat    = InferSelectModel<typeof chats>
+export type Message = InferSelectModel<typeof messages>
 
-export type Profile = Database['public']['Tables']['profiles']['Row']
-export type Product = Database['public']['Tables']['products']['Row']
-export type Chat    = Database['public']['Tables']['chats']['Row']
-export type Message = Database['public']['Tables']['messages']['Row']
+export type ProductInsert = InferInsertModel<typeof products>
+export type ProductUpdate = Partial<InferInsertModel<typeof products>>
+export type MessageInsert = InferInsertModel<typeof messages>
 
-
-export type ProductInsert = Database['public']['Tables']['products']['Insert']
-export type ProductUpdate = Database['public']['Tables']['products']['Update']
-export type MessageInsert = Database['public']['Tables']['messages']['Insert']
-
-
-export type ProductStatus   = Database['public']['Enums']['product_status']
-export type ProductCategory = Database['public']['Enums']['product_category']
-export type MessageType     = Database['public']['Enums']['message_type']
-
-
-
+export type ProductStatus   = "available" | "sold"
+export type ProductCategory = "microcontroller" | "electronic_component" | "module" | "tool" | "book_module" | "laptop_accessory" | "clothing" | "stationery" | "other"
+export type MessageType     = "text" | "offer" | "offer_accept" | "offer_reject" | "system"
 
 export type ProductWithSeller = Product & {
   seller: Pick<Profile, 'id' | 'full_name' | 'avatar_url' | 'rating' | 'whatsapp_number'>
 }
 
-
 export type MessageWithSender = Message & {
   sender: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>
 }
-
 
 export type ChatWithDetails = Chat & {
   product: Pick<Product, 'id' | 'title' | 'image_urls' | 'status'>
@@ -41,15 +34,11 @@ export type ChatWithDetails = Chat & {
   last_message?: Pick<Message, 'content' | 'message_type' | 'created_at' | 'is_read'>
 }
 
-
-
-
 export interface OfferPayload {
   offered_price:  number
   original_price?: number
   note?:          string
 }
-
 
 export interface OfferAcceptPayload {
   agreed_price: number
@@ -57,12 +46,10 @@ export interface OfferAcceptPayload {
   meet_time:    string
 }
 
-
 export interface OfferRejectPayload {
   counter_offer?: number
   reason?:        string
 }
-
 
 export interface SystemMessagePayload {
   event: 'status_changed' | 'sale_reverted' | 'item_sold'
@@ -70,18 +57,15 @@ export interface SystemMessagePayload {
   to?:   ProductStatus
 }
 
-
 export type MessagePayload =
   | OfferPayload
   | OfferAcceptPayload
   | OfferRejectPayload
   | SystemMessagePayload
 
-
 export type ActionResult<T = void> =
   | { success: true; data?: T; error?: never; fieldErrors?: never }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> }
-
 
 // ── Wishlists ──────────────────────────────────────────────
 
@@ -89,13 +73,12 @@ export interface Wishlist {
   id:         string
   user_id:    string
   product_id: string
-  created_at: string
+  created_at: Date
 }
 
 export type WishlistProduct = Product & {
   seller: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>
 }
-
 
 // ── Reviews ────────────────────────────────────────────────
 
@@ -106,8 +89,8 @@ export interface Review {
   reviewer_id: string
   rating:      number
   comment:     string | null
-  created_at:  string
-  updated_at:  string
+  created_at:  Date
+  updated_at:  Date
 }
 
 export type ReviewWithReviewer = Review & {

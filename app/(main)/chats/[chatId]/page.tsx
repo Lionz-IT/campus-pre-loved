@@ -3,7 +3,10 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { chats } from '@/lib/db/schema'
+import { eq, or } from 'drizzle-orm'
 import { getChatMessagesAction } from '@/features/chats/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import Badge from '@/components/ui/Badge'
@@ -22,26 +25,24 @@ export const metadata: Metadata = { title: 'Chat' }
 
 export default async function ChatRoomPage({ params }: { params: Promise<{ chatId: string }> }) {
   const { chatId } = await params
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect(ROUTES.LOGIN)
 
-  const [{ data: chat, error }, messagesResult] = await Promise.all([
-    supabase
-      .from('chats')
-      .select(`
-        *,
-        product:products!chats_product_id_fkey ( id, title, image_urls, status, price, seller_id ),
-        buyer:profiles!chats_buyer_id_fkey     ( id, full_name, avatar_url ),
-        seller:profiles!chats_seller_id_fkey   ( id, full_name, avatar_url )
-      `)
-      .eq('id', chatId)
-      .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-      .single(),
+  const [chat, messagesResult] = await Promise.all([
+    db.query.chats.findFirst({
+      where: (chats, { eq, or }) =>
+        eq(chats.id, chatId) &&
+        (or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string)) as any),
+      with: {
+        product: { columns: { id: true, title: true, image_urls: true, status: true, price: true, seller_id: true } },
+        buyer: { columns: { id: true, full_name: true, avatar_url: true } },
+        seller: { columns: { id: true, full_name: true, avatar_url: true } },
+      }
+    }),
     getChatMessagesAction(chatId),
   ])
 
-  if (error || !chat) notFound()
+  if (!chat) notFound()
 
   const initialMessages = messagesResult.success ? messagesResult.data ?? [] : []
 
@@ -91,8 +92,8 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
 
       <ChatRoom
         chatId={chatId}
-        initialMessages={initialMessages}
-        currentUserId={user.id}
+        initialMessages={initialMessages as any}
+        currentUserId={user.id as string}
         isSeller={isSeller}
         product={chat.product}
         otherPerson={isSeller ? chat.buyer : chat.seller}

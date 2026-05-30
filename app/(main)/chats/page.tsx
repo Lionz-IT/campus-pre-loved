@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { products } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { getMyChatsAction } from '@/features/chats/actions'
 import { ROUTES } from '@/lib/constants/routes'
 import ChatsSidebar from '@/components/chat/sidebar/ChatsSidebar'
@@ -9,19 +12,17 @@ export default async function ChatsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect(ROUTES.LOGIN)
 
   const resolvedSearchParams = await searchParams;
   const productId = resolvedSearchParams?.productId as string | undefined;
 
   if (productId) {
-    const { data: product } = await supabase
-      .from('products')
-      .select('seller_id')
-      .eq('id', productId)
-      .single()
+    const product = await db.query.products.findFirst({
+      where: eq(products.id, productId),
+      columns: { seller_id: true }
+    })
 
     if (product && product.seller_id !== user.id) {
       const { createChatRoomAction } = await import('@/features/chats/actions')
@@ -39,7 +40,7 @@ export default async function ChatsPage({
   return (
     <>
       <div className="flex md:hidden flex-col h-full w-full bg-white z-10 absolute inset-0">
-        <ChatsSidebar chats={chats} userId={user.id} />
+        <ChatsSidebar chats={chats} userId={user.id as string} />
       </div>
 
       <div className="hidden md:flex flex-1 items-center justify-center h-full bg-gray-50/50">

@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { ROUTES } from '@/lib/constants/routes'
 import NewProductForm from '@/components/product/NewProductForm'
 
 export const metadata: Metadata = { title: 'Jual Barang Baru' }
 
 export default async function NewProductPage() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) redirect(ROUTES.LOGIN)
 
   return (

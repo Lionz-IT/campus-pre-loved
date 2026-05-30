@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { products } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { updateProductAction, deleteProductAction, toggleProductStatusAction } from '@/features/products/actions'
 import { PRODUCT_CATEGORIES, PRODUCT_CONDITIONS } from '@/lib/constants/pens'
 import { ROUTES } from '@/lib/constants/routes'
@@ -10,27 +13,26 @@ import { InputField, TextareaField, SelectField } from '@/components/ui/Input'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
-  const { data } = await supabase.from('products').select('title').eq('id', id).single()
+  const product = await db.query.products.findFirst({
+    where: eq(products.id, id),
+    columns: { title: true }
+  })
   return {
-    title: data?.title ? `Edit: ${data.title}` : 'Edit Produk',
+    title: product?.title ? `Edit: ${product.title}` : 'Edit Produk',
   }
 }
 
 export default async function ProductEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
-  const [{ data: { user } }, { data: rawData2, error }] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase.from('products').select('*').eq('id', id).single(),
+  const [user, product] = await Promise.all([
+    getCurrentUser(),
+    db.query.products.findFirst({ where: eq(products.id, id) }),
   ])
 
   if (!user) redirect(ROUTES.LOGIN)
 
-  const product = rawData2 as Product | null
-
-  if (error || !product) notFound()
+  if (!product) notFound()
   if (product.seller_id !== user.id) notFound()
 
   return (

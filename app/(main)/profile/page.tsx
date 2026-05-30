@@ -2,7 +2,10 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { profiles, products } from '@/lib/db/schema'
+import { eq, and, desc } from 'drizzle-orm'
 import { ROUTES } from '@/lib/constants/routes'
 
 import { logoutAction } from '@/features/auth/actions'
@@ -12,23 +15,18 @@ import { ProductCard } from '@/components/ui/Card'
 export const metadata: Metadata = { title: 'Profil Saya' }
 
 export default async function MyProfilePage() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) redirect(ROUTES.LOGIN)
 
-  const [{ data: profileData }, { data: productsData }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase
-      .from('products')
-      .select('*')
-      .eq('seller_id', user.id)
-      .eq('is_deleted', false)
-      .order('created_at', { ascending: false }),
+  const [profile, listings] = await Promise.all([
+    db.query.profiles.findFirst({ where: eq(profiles.id, user.id as string) }),
+    db.query.products.findMany({
+      where: and(eq(products.seller_id, user.id as string), eq(products.is_deleted, false)),
+      orderBy: desc(products.created_at)
+    })
   ])
 
-  const profile = profileData
-  const listings = productsData ?? []
   const displayName = profile?.full_name ?? user.email?.split('@')[0] ?? 'Pengguna'
 
   return (

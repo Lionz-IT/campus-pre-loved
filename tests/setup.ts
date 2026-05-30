@@ -18,18 +18,15 @@ vi.mock('next/navigation', () => ({
   }
 }))
 
-// Mock Supabase
-vi.mock('@supabase/ssr', () => ({
-  createBrowserClient: vi.fn(() => ({
-    auth: {
-      getSession: vi.fn(),
-      getUser: vi.fn(),
-    }
-  })),
-  createServerClient: vi.fn(() => ({
-    auth: {
-      getSession: vi.fn(),
-      getUser: vi.fn(),
-    }
-  }))
+vi.mock('next-auth/react', () => ({
+  useSession: vi.fn(() => ({ data: null, status: 'unauthenticated' })),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+}))
+
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(),
+  getCurrentUser: vi.fn(),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
 }))

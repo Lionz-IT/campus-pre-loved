@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getMarketplaceFeedAction } from '@/features/products/actions'
 import { PRODUCT_CATEGORIES } from '@/lib/constants/pens'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 
 import { ProductCard } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
@@ -19,11 +19,10 @@ export default async function DashboardPage({
   searchParams: Promise<{ category?: string; q?: string }>
 }) {
   const { category, q } = await searchParams
-  const supabase = await createSupabaseServerClient()
   
-  const [result, { data: { user } }] = await Promise.all([
+  const [result, user] = await Promise.all([
     getMarketplaceFeedAction({ category, search: q, limit: 24 }),
-    supabase.auth.getUser()
+    getCurrentUser()
   ])
   
   const products = result.success ? result.data ?? [] : []

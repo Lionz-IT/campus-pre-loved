@@ -2,7 +2,10 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { updateProfileAction } from '@/features/auth/actions'
 import { ROUTES } from '@/lib/constants/routes'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { profiles } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import type { Profile } from '@/types'
 import SubmitButton from '@/components/ui/SubmitButton'
 import { InputField, TextareaField } from '@/components/ui/Input'
@@ -10,13 +13,13 @@ import { InputField, TextareaField } from '@/components/ui/Input'
 export const metadata: Metadata = { title: 'Pengaturan Profil' }
 
 export default async function ProfileSettingsPage() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) redirect(ROUTES.LOGIN)
 
-  const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-  const profile = data as Profile | null
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, user.id as string)
+  })
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

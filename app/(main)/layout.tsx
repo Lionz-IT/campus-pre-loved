@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { getUnreadCountAction } from '@/features/chats/actions'
 import GSAPAnimations from '@/components/layout/GSAPAnimations'
 import NextTopLoader from 'nextjs-toploader'
@@ -7,8 +7,7 @@ import Image from 'next/image'
 import { ROUTES } from '@/lib/constants/routes'
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   let unreadCount = 0
   if (user) {

@@ -1,48 +1,69 @@
-name: Deploy to AWS EC2
+name: Deploy to AWS EC2 via GHCR
 
 on:
   push:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
-  build-and-push:
+  build-and-push-image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Wajib agar GitHub Actions bisa menyimpan Docker Image ke GHCR
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 2. Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }} # Token ini otomatis disediakan oleh GitHub
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: campus-preloved-app
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: 3. Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   deploy:
-    needs: build-and-push
+    needs: build-and-push-image
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to EC2
+      - name: 4. Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/campus-preloved-app:${{ github.sha }}
-            docker stop campus-preloved || true
-            docker rm campus-preloved || true
-            docker run -d --name campus-preloved -p 3000:3000 -e DATABASE_URL=${{ secrets.DATABASE_URL }} -e NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} -e S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/campus-preloved-app:${{ github.sha }}
+            # Login ke GHCR dari dalam EC2
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Tarik image yang sudah matang
+            docker pull ghcr.io/${{ github.repository }}:latest
+            
+            # Hentikan container lama
+            docker stop marketplace-web || true
+            docker rm marketplace-web || true
+            
+            # Jalankan container baru dan SUNTIKKAN SEMUA ENV VARS yang krusial
+            docker run -d --name marketplace-web -p 80:3000 \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
+              -e NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
+              -e S3_BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}" \
+              -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+              -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+              ghcr.io/${{ github.repository }}:latest
+            
+            # Bersihkan sisa image lama
+            docker image prune -f

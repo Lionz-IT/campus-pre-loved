@@ -1,6 +1,10 @@
 'use server'
 
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { signIn, signOut, auth } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { profiles } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
+import { hash } from 'bcryptjs'
 import { registerSchema, loginSchema } from '@/lib/validations/auth.schema'
 import type { ActionResult } from '@/types'
 import { revalidatePath } from 'next/cache'
@@ -24,21 +28,21 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     return { success: false, error: firstError ?? 'Data tidak valid' }
   }
 
-  const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.auth.signUp({
-    email:    parsed.data.campus_email,
-    password: parsed.data.password,
-    options: {
-      data: { 
-        full_name:  parsed.data.full_name,
-        department: parsed.data.department,
-        nim:        parsed.data.nim
-      },
-      emailRedirectTo:  `${process.env.NEXT_PUBLIC_SITE_URL}${ROUTES.AUTH_CALLBACK}`,
-    },
+  const existing = await db.query.profiles.findFirst({
+    where: eq(profiles.campus_email, parsed.data.campus_email),
+    columns: { id: true },
   })
+  if (existing) return { success: false, error: 'Email sudah terdaftar' }
 
-  if (error) return { success: false, error: error.message }
+  const password_hash = await hash(parsed.data.password, 12)
+
+  await db.insert(profiles).values({
+    full_name:    parsed.data.full_name,
+    department:   parsed.data.department,
+    nim:          parsed.data.nim,
+    campus_email: parsed.data.campus_email,
+    password_hash,
+  })
 
   return { success: true }
 }
@@ -56,13 +60,15 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
     return { success: false, error: firstError ?? 'Data tidak valid' }
   }
 
-  const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.auth.signInWithPassword({
-    email:    parsed.data.campus_email,
-    password: parsed.data.password,
-  })
-
-  if (error) return { success: false, error: 'Email atau password salah' }
+  try {
+    await signIn('credentials', {
+      campus_email: parsed.data.campus_email,
+      password:     parsed.data.password,
+      redirect:     false,
+    })
+  } catch {
+    return { success: false, error: 'Email atau password salah' }
+  }
 
   revalidatePath('/', 'layout')
   return { success: true }
@@ -70,17 +76,16 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
 
 
 export async function logoutAction(): Promise<void> {
-  const supabase = await createSupabaseServerClient()
-  await supabase.auth.signOut()
+  await signOut({ redirect: false })
   revalidatePath('/', 'layout')
   redirect(ROUTES.LOGIN)
 }
 
 
 export async function updateProfileAction(formData: FormData): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Unauthorized' }
+  const session = await auth()
+  const user = session?.user
+  if (!user?.id) return { success: false, error: 'Unauthorized' }
 
   const updates = {
     full_name:       formData.get('full_name') as string,
@@ -88,14 +93,13 @@ export async function updateProfileAction(formData: FormData): Promise<ActionRes
     department:      formData.get('department') as string | null,
     bio:             formData.get('bio') as string | null,
     whatsapp_number: formData.get('whatsapp_number') as string | null,
+    updated_at:      new Date(),
   }
 
-  const { error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', user.id)
+  await db.update(profiles)
+    .set(updates)
+    .where(eq(profiles.id, user.id))
 
-  if (error) return { success: false, error: error.message }
   revalidatePath(ROUTES.PROFILE)
   return { success: true }
 }

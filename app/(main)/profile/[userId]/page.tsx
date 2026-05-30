@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db'
+import { profiles, products } from '@/lib/db/schema'
+import { eq, and, desc } from 'drizzle-orm'
 import { ROUTES } from '@/lib/constants/routes'
 import { PRODUCT_STATUS_LABELS } from '@/lib/constants/pens'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
@@ -23,9 +25,10 @@ const STATUS_BADGE_VARIANT = {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { userId } = await params
-  const supabase = await createSupabaseServerClient()
-  const { data } = await supabase.from('profiles').select('full_name').eq('id', userId).single()
-  const profileMeta = data as Pick<Profile, 'full_name'> | null
+  const profileMeta = await db.query.profiles.findFirst({
+    where: eq(profiles.id, userId),
+    columns: { full_name: true }
+  })
 
   return {
     title: profileMeta?.full_name ? `${profileMeta.full_name} | Profil` : 'Profil Pengguna',
@@ -34,24 +37,18 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function PublicProfilePage({ params }: { params: Params }) {
   const { userId } = await params
-  const supabase = await createSupabaseServerClient()
 
-  const [{ data: profileData }, { data: productsData }, sellerReviewsResult] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', userId).single(),
-    supabase
-      .from('products')
-      .select('*')
-      .eq('seller_id', userId)
-      .eq('status', 'available')
-      .eq('is_deleted', false)
-      .order('created_at', { ascending: false }),
+  const [profile, listings, sellerReviewsResult] = await Promise.all([
+    db.query.profiles.findFirst({ where: eq(profiles.id, userId) }),
+    db.query.products.findMany({
+      where: and(eq(products.seller_id, userId), eq(products.status, 'available'), eq(products.is_deleted, false)),
+      orderBy: desc(products.created_at)
+    }),
     getSellerReviewsAction(userId),
   ])
 
-  const profile = profileData as Profile | null
   if (!profile) notFound()
 
-  const listings = (productsData ?? []) as Product[]
   const sellerReviews = sellerReviewsResult.success && sellerReviewsResult.data ? sellerReviewsResult.data : []
   const displayName = profile.full_name || 'Pengguna'
 

@@ -1,8 +1,10 @@
 import { cache, Suspense } from 'react'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import type { User } from '@supabase/supabase-js'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { products, chats } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
 import { createChatRoomAction } from '@/features/chats/actions'
 import { markAsSoldAction, revertSoldAction } from '@/features/products/actions'
 import { checkWishlistAction } from '@/features/wishlists/actions'
@@ -24,21 +26,22 @@ import type { ProductWithSeller } from '@/types'
 
 // 1. DEDUPLICATE QUERY: Cache database call to reuse between Metadata and Component
 const getProduct = cache(async (id: string) => {
-  const supabase = await createSupabaseServerClient()
-  return supabase
-    .from('products')
-    .select(`*, seller:profiles!products_seller_id_fkey (id, full_name, avatar_url, rating, whatsapp_number, nim, department)`)
-    .eq('id', id)
-    .eq('is_deleted', false)
-    .single()
+  return db.query.products.findFirst({
+    where: and(eq(products.id, id), eq(products.is_deleted, false)),
+    with: {
+      seller: {
+        columns: { id: true, full_name: true, avatar_url: true, rating: true, whatsapp_number: true, nim: true, department: true }
+      }
+    }
+  })
 })
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
-  const { data } = await getProduct(id)
+  const product = await getProduct(id)
   return {
-    title:       data?.title ?? 'Detail Produk',
-    description: data?.description ?? 'Lihat detail produk di Campus Pre-loved PENS.',
+    title:       product?.title ?? 'Detail Produk',
+    description: product?.description ?? 'Lihat detail produk di Campus Pre-loved PENS.',
   }
 }
 
@@ -49,20 +52,18 @@ async function WishlistToggle({ productId }: { productId: string }) {
   return <WishlistButton productId={productId} initialWishlisted={isWishlisted} size="sm" />
 }
 
-type ChatQueryResult = { data: { id: string } | null }
-
 // 3. ISOLATE REVIEWS AND ACTIONS (WATERFALL FIX)
-async function ProductInteractions({ product, user }: { product: ProductWithSeller, user: User | null }) {
-  const supabase = await createSupabaseServerClient()
+async function ProductInteractions({ product, user }: { product: ProductWithSeller, user: { id: string } | null }) {
   const isLoggedIn = !!user
   const isSeller   = user?.id === product.seller_id
 
-  let chatPromise: Promise<ChatQueryResult> = Promise.resolve({ data: null })
+  let chatPromise: Promise<{ id: string } | undefined> = Promise.resolve(undefined)
   
-  if (isLoggedIn) {
-    if (!isSeller) {
-      chatPromise = supabase.from('chats').select('id').eq('product_id', product.id).eq('buyer_id', user!.id).maybeSingle() as unknown as Promise<ChatQueryResult>
-    }
+  if (isLoggedIn && !isSeller) {
+    chatPromise = db.query.chats.findFirst({
+      where: and(eq(chats.product_id, product.id), eq(chats.buyer_id, user!.id)),
+      columns: { id: true }
+    })
   }
 
   const [chatResult, reviewsResult, canReviewResult] = await Promise.all([
@@ -71,7 +72,7 @@ async function ProductInteractions({ product, user }: { product: ProductWithSell
     checkCanReviewAction(product.id, product.seller_id),
   ])
 
-  const existingChatId = chatResult.data?.id ?? null
+  const existingChatId = chatResult?.id ?? null
   const reviews = reviewsResult.success && reviewsResult.data ? reviewsResult.data : []
   const canReview = canReviewResult.success && canReviewResult.data ? canReviewResult.data.canReview : false
 
@@ -133,7 +134,7 @@ async function ProductInteractions({ product, user }: { product: ProductWithSell
       <div className="mt-10 animate-fade-in-up stagger-3">
         <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Review Pembeli</h2>
-          <ReviewList reviews={reviews} />
+          <ReviewList reviews={reviews as any} />
           {canReview && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <h3 className="text-sm font-medium text-gray-900 mb-3">Tulis Review</h3>
@@ -148,15 +149,14 @@ async function ProductInteractions({ product, user }: { product: ProductWithSell
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
   // Only block the initial render for the core product and user authentication!
-  const [{ data: product, error }, { data: { user } }] = await Promise.all([
+  const [product, user] = await Promise.all([
     getProduct(id),
-    supabase.auth.getUser(),
+    getCurrentUser(),
   ])
 
-  if (error || !product) notFound()
+  if (!product) notFound()
 
   const isLoggedIn = !!user
   const conditionLabel = PRODUCT_CONDITIONS.find((c) => c.value === product.condition)
@@ -231,7 +231,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               <div className="h-40 bg-gray-100 rounded-2xl animate-pulse w-full mt-10" />
             </div>
           }>
-            <ProductInteractions product={product} user={user} />
+            <ProductInteractions product={product as any} user={user as any} />
           </Suspense>
 
         </div>

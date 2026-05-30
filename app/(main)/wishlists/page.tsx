@@ -2,7 +2,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { getWishlistAction } from '@/features/wishlists/actions'
 import { ProductCard } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
@@ -12,8 +12,7 @@ import type { WishlistProduct } from '@/types'
 export const metadata: Metadata = { title: 'Barang Tersimpan' }
 
 export default async function WishlistsPage() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) {
     redirect(ROUTES.LOGIN)

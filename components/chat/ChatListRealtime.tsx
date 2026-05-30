@@ -2,44 +2,19 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
+
+const POLL_INTERVAL_MS = 5000;
 
 export default function ChatListRealtime() {
   const router = useRouter()
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient()
-
-    const channel = supabase
-      .channel('chat-list-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-        },
-        () => {
-          // Segarkan data server component saat ada pesan baru
-          router.refresh()
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chats',
-        },
-        () => {
-          // Segarkan data server component saat ada update chat
-          router.refresh()
-        }
-      )
-      .subscribe()
+    const interval = setInterval(() => {
+      router.refresh()
+    }, POLL_INTERVAL_MS)
 
     return () => {
-      supabase.removeChannel(channel)
+      clearInterval(interval)
     }
   }, [router])
 

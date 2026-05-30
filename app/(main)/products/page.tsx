@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { getMarketplaceFeedAction } from '@/features/products/actions'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import EmptyState from '@/components/ui/EmptyState'
 import ProductFilters from '@/components/product/ProductFilters'
 import ProductSort from '@/components/product/ProductSort'
@@ -17,11 +17,10 @@ export default async function ProductsBrowsePage({
   searchParams: Promise<{ category?: string; q?: string; sort?: string; condition?: string; min_price?: string; max_price?: string; page?: string }>
 }) {
   const { category, q, sort, condition, min_price, max_price } = await searchParams
-  const supabase = await createSupabaseServerClient()
   
-  const [result, { data: { user } }] = await Promise.all([
+  const [result, user] = await Promise.all([
     getMarketplaceFeedAction({ category, search: q, sort, condition, min_price, max_price, limit: 24 }),
-    supabase.auth.getUser()
+    getCurrentUser()
   ])
   
   const products = result.success ? result.data ?? [] : []

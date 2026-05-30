@@ -264,6 +264,7 @@ export async function getMarketplaceFeedAction(params?: {
       is_negotiable: products.is_negotiable,
       campus_location: products.campus_location,
       created_at: products.created_at,
+      seller_id: products.seller_id,
       seller_name: profiles.full_name,
       seller_avatar: profiles.avatar_url,
       seller_rating: profiles.rating,
