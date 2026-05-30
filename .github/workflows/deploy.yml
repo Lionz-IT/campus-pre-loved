@@ -56,7 +56,7 @@ jobs:
             docker run --rm \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               ghcr.io/lionz-it/campus-pre-loved:latest \
-              npx drizzle-kit migrate
+              npx drizzle-kit migrate --config=drizzle.config.ts
             
             if [ $? -ne 0 ]; then
               echo "Migration failed, aborting deployment."
