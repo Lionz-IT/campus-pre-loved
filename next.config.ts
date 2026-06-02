@@ -16,6 +16,20 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'pens-marketplace-storage.s3.ap-southeast-3.amazonaws.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'pens-marketplace-storage.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        pathname: '/**',
+        hostname: '*.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        pathname: '/**',
+        hostname: '*.s3.*.amazonaws.com',
+      },
     ],
   },
 }
