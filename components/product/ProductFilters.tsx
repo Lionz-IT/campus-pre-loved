@@ -8,7 +8,9 @@ export default function ProductFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [category, setCategory] = useState<string>(searchParams.get('category') || '')
+  const [categories, setCategories] = useState<string[]>(
+    searchParams.get('category') ? searchParams.get('category')!.split(',') : []
+  )
   const [condition, setCondition] = useState<string>(searchParams.get('condition') || '')
   const [minPrice, setMinPrice] = useState<string>(searchParams.get('min_price') || '')
   const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('max_price') || '')
@@ -16,7 +18,7 @@ export default function ProductFilters() {
   const applyFilters = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
     
-    if (category) params.set('category', category)
+    if (categories.length > 0) params.set('category', categories.join(','))
     else params.delete('category')
     
     if (condition) params.set('condition', condition)
@@ -30,27 +32,28 @@ export default function ProductFilters() {
     
     params.delete('page')
     router.push(`/products?${params.toString()}`)
-  }, [category, condition, minPrice, maxPrice, searchParams, router])
+  }, [categories, condition, minPrice, maxPrice, searchParams, router])
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
     let hasChanges = false;
     
-    if ((params.get('category') || '') !== category) hasChanges = true;
+    const urlCategories = params.get('category') ? params.get('category')!.split(',') : [];
+    if (urlCategories.join(',') !== categories.join(',')) hasChanges = true;
     if ((params.get('condition') || '') !== condition) hasChanges = true;
 
     if (hasChanges) {
         applyFilters();
     }
-  }, [category, condition, applyFilters, searchParams]);
+  }, [categories, condition, applyFilters, searchParams]);
 
   return (
     <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
         <div>
           <h3 className="font-bold text-[#4C1A57] mb-4 tracking-wide flex justify-between items-center">
             Kategori
-            {category && (
-              <button onClick={() => setCategory('')} className="text-xs text-gray-400 font-normal hover:text-[#4C1A57]">Reset</button>
+            {categories.length > 0 && (
+              <button onClick={() => setCategories([])} className="text-xs text-gray-400 font-normal hover:text-[#4C1A57]">Reset</button>
             )}
           </h3>
           <div className="space-y-3">
@@ -58,10 +61,10 @@ export default function ProductFilters() {
                <label key={cat.value} className="flex items-center gap-3 cursor-pointer group">
                  <div className="relative flex items-center justify-center">
                    <input 
-                    type="radio" 
+                    type="checkbox" 
                     name="category"
-                    checked={category === cat.value}
-                    onChange={() => setCategory(cat.value)}
+                    checked={categories.includes(cat.value)}
+                    onChange={() => setCategories(prev => prev.includes(cat.value) ? prev.filter(c => c !== cat.value) : [...prev, cat.value])}
                     className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded cursor-pointer checked:bg-[#4C1A57] checked:border-[#4C1A57] transition-colors" 
                   />
                    <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>

@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { products, profiles, messages } from '@/lib/db/schema'
-import { eq, and, desc, gte, lte, ilike } from 'drizzle-orm'
+import { eq, and, desc, gte, lte, ilike, inArray } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { ROUTES } from '@/lib/constants/routes'
@@ -237,7 +237,8 @@ export async function getMarketplaceFeedAction(params?: {
   ]
 
   if (category && category !== 'all') {
-    conditions.push(eq(products.category, category as ProductCategory))
+    const categories = category.split(',') as ProductCategory[]
+    conditions.push(inArray(products.category, categories))
   }
   if (condition && condition !== 'all') {
     conditions.push(eq(products.condition, condition))
