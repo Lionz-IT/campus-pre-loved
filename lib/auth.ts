@@ -6,6 +6,7 @@ import { profiles } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  secret: process.env.AUTH_SECRET,
   providers: [
     Credentials({
       credentials: {
@@ -22,6 +23,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const isValid = await compare(credentials.password as string, user.password_hash)
 
         if (!isValid) throw new Error("Invalid password.")
+
+        if (!user.is_verified) throw new Error("Please verify your email.")
 
         return { id: user.id, email: user.campus_email, name: user.full_name }
       },

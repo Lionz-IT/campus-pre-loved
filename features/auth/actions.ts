@@ -77,6 +77,15 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
     return { success: false, error: firstError ?? 'Data tidak valid' }
   }
 
+  const user = await db.query.profiles.findFirst({
+    where: eq(profiles.campus_email, parsed.data.campus_email),
+    columns: { is_verified: true }
+  })
+
+  if (user && !user.is_verified) {
+    return { success: false, error: 'Email belum diverifikasi. Silakan cek kotak masuk email Anda.' }
+  }
+
   try {
     await signIn('credentials', {
       campus_email: parsed.data.campus_email,

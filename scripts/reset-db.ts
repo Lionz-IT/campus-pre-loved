@@ -13,7 +13,8 @@ async function clearDatabase() {
       "wishlists", 
       "reviews", 
       "products", 
-      "profiles" // verification_tokens dihapus karena tidak ada
+      "profiles",
+      "verification_tokens"
     ];
 
     console.log(`Menghapus tabel: ${tablesToTruncate.join(", ")}`);
