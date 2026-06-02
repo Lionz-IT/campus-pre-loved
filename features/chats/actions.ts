@@ -19,16 +19,20 @@ export async function createChatRoomAction(
   if (!user) return { success: false, error: 'Kamu harus login terlebih dahulu' }
   if (user.id === sellerId) return { success: false, error: 'Kamu tidak bisa chat dengan dirimu sendiri' }
 
-  const newChat = await db.insert(chats)
-    .values({ product_id: productId, buyer_id: user.id as string, seller_id: sellerId })
-    .onConflictDoUpdate({
-      target: [chats.product_id, chats.buyer_id],
-      set: { product_id: productId }
-    })
-    .returning({ id: chats.id })
+  let chat = await db.query.chats.findFirst({
+    where: and(eq(chats.product_id, productId), eq(chats.buyer_id, user.id as string)),
+    columns: { id: true }
+  })
 
-  if (!newChat[0]) return { success: false, error: 'Gagal membuat atau mendapatkan chat' }
-  return { success: true, data: { chatId: newChat[0].id } }
+  if (!chat) {
+    const newChat = await db.insert(chats)
+      .values({ product_id: productId, buyer_id: user.id as string, seller_id: sellerId })
+      .returning({ id: chats.id })
+    chat = newChat[0]
+  }
+
+  if (!chat) return { success: false, error: 'Gagal membuat atau mendapatkan chat' }
+  return { success: true, data: { chatId: chat.id } }
 }
 
 export async function getMyChatsAction() {

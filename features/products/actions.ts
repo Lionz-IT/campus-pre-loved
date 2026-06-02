@@ -61,8 +61,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
         ContentType: file.type,
       }))
       
-      const region = process.env.AWS_REGION || 'ap-southeast-3'
-      imageUrls.push(`https://${process.env.S3_BUCKET_NAME}.s3.${region}.amazonaws.com/${fileName}`)
+        imageUrls.push(`https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`)
     }
 
     const newProduct = await db.insert(products).values({
