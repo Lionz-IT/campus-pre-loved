@@ -55,16 +55,21 @@ jobs:
             docker stop marketplace-web || true
             docker rm marketplace-web || true
             
-            # Jalankan container baru dan SUNTIKKAN SEMUA ENV VARS yang krusial (UBAH KE HURUF KECIL MANUAL)
+            # Jalankan container baru dan SUNTIKKAN SEMUA ENV VARS yang krusial
             docker run -d --name marketplace-web -p 80:3000 \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
               -e NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
+              -e NEXT_PUBLIC_SITE_URL="${{ secrets.NEXTAUTH_URL }}" \
               -e S3_BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}" \
               -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
               -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
               -e AWS_REGION="${{ secrets.AWS_REGION }}" \
               -e AUTH_TRUST_HOST="true" \
+              -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
+              -e SMTP_PORT="${{ secrets.SMTP_PORT }}" \
+              -e SMTP_USER="${{ secrets.SMTP_USER }}" \
+              -e SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}" \
               ghcr.io/lionz-it/campus-pre-loved:latest
             
             # Bersihkan sisa image lama
