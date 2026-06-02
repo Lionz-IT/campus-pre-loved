@@ -61,7 +61,7 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
         ContentType: file.type,
       }))
       
-      imageUrls.push(`https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`)
+      imageUrls.push(`https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`)
     }
 
     const newProduct = await db.insert(products).values({
