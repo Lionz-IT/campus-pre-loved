@@ -11,6 +11,7 @@ import { revalidatePath } from 'next/cache'
 import { sendEmail } from '@/lib/email'
 import { createVerificationToken } from '@/features/auth/verification.actions'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 
 import { ROUTES } from '@/lib/constants/routes'
 
@@ -48,7 +49,13 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
   }).returning({ id: profiles.id });
 
   const token = await createVerificationToken(newUser.id);
-  const verificationLink = `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`;
+  
+  const headersList = await headers();
+  const host = headersList.get('x-forwarded-host') || headersList.get('host');
+  const protocol = headersList.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+  const origin = `${protocol}://${host}`;
+  
+  const verificationLink = `${origin}/verify-email?token=${token}`;
 
   await sendEmail({
     to: parsed.data.campus_email,
