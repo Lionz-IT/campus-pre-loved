@@ -8,6 +8,43 @@ import { revalidatePath } from 'next/cache'
 import { ROUTES } from '@/lib/constants/routes'
 import type { ActionResult } from '@/types'
 import { offerSchema, offerAcceptSchema, offerRejectSchema } from '@/lib/validations/product.schema'
+import { PutObjectCommand } from "@aws-sdk/client-s3"
+import { s3 } from "@/lib/s3"
+
+export async function uploadChatAttachmentAction(formData: FormData): Promise<ActionResult<{ url: string }>> {
+  const session = await auth()
+  const user = session?.user
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const file = formData.get('file') as File
+  if (!file || file.size === 0) return { success: false, error: 'File tidak ditemukan' }
+  
+  if (!file.type.startsWith('image/')) return { success: false, error: 'Hanya gambar yang diperbolehkan' }
+  if (file.size > 5 * 1024 * 1024) return { success: false, error: 'File terlalu besar (maksimal 5MB)' }
+
+  const arrayBuffer = await file.arrayBuffer()
+  const fileBuffer = Buffer.from(arrayBuffer)
+  
+  const fileExt = file.name.split('.').pop()
+  const fileName = `chats/${user.id}/${Date.now()}_${crypto.randomUUID()}.${fileExt}`
+
+  try {
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: fileName,
+      Body: fileBuffer,
+      ContentType: file.type,
+    }))
+
+    const region = process.env.AWS_REGION || 'ap-southeast-3'
+    const url = `https://${process.env.S3_BUCKET_NAME}.s3.${region}.amazonaws.com/${fileName}`
+
+    return { success: true, data: { url } }
+  } catch (err: any) {
+    console.error("S3 Upload error:", err)
+    return { success: false, error: 'Gagal mengunggah gambar ke server' }
+  }
+}
 
 
 export async function createChatRoomAction(
@@ -58,6 +95,12 @@ export async function getChatMessagesAction(chatId: string) {
   const user = session?.user
   if (!user) return { success: false as const, error: 'Unauthorized' }
 
+  const chat = await db.query.chats.findFirst({
+    where: and(eq(chats.id, chatId), or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string))),
+    columns: { id: true }
+  })
+  if (!chat) return { success: false as const, error: 'Chat tidak ditemukan atau Anda tidak memiliki akses' }
+
   const data = await db.query.messages.findMany({
     where: eq(messages.chat_id, chatId),
     orderBy: desc(messages.created_at),
@@ -73,6 +116,12 @@ export async function sendMessageAction(chatId: string, content: string) {
   const session = await auth()
   const user = session?.user
   if (!user) return { success: false as const, error: 'Unauthorized' }
+
+  const chat = await db.query.chats.findFirst({
+    where: and(eq(chats.id, chatId), or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string))),
+    columns: { id: true }
+  })
+  if (!chat) return { success: false, error: 'Chat tidak ditemukan atau Anda tidak memiliki akses' }
 
   const newMessage = await db.insert(messages).values({
     chat_id:      chatId,
@@ -96,6 +145,12 @@ export async function sendOfferAction(
   const session = await auth()
   const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
+
+  const chat = await db.query.chats.findFirst({
+    where: and(eq(chats.id, chatId), or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string))),
+    columns: { id: true }
+  })
+  if (!chat) return { success: false, error: 'Chat tidak ditemukan atau Anda tidak memiliki akses' }
 
   const parsed = offerSchema.safeParse(payload)
   if (!parsed.success) {
@@ -138,6 +193,10 @@ export async function acceptOfferAction(
     .set({ status: 'sold' })
     .where(eq(products.id, chat.product_id))
 
+  await db.update(profiles)
+    .set({ total_sold: sql`${profiles.total_sold} + 1` })
+    .where(eq(profiles.id, chat.seller_id))
+
   await db.insert(messages).values({
     chat_id:      chatId,
     sender_id:    user.id as string,
@@ -157,6 +216,12 @@ export async function rejectOfferAction(
   const session = await auth()
   const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
+
+  const chat = await db.query.chats.findFirst({
+    where: and(eq(chats.id, chatId), or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string))),
+    columns: { id: true }
+  })
+  if (!chat) return { success: false, error: 'Chat tidak ditemukan atau Anda tidak memiliki akses' }
 
   const parsed = offerRejectSchema.safeParse(payload)
   if (!parsed.success) {

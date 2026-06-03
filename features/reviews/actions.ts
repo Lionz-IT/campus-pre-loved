@@ -30,6 +30,14 @@ export async function createReviewAction(
     return { success: false, error: 'Komentar maksimal 500 karakter' }
   }
 
+  const product = await db.query.products.findFirst({
+    where: eq(products.id, productId),
+    columns: { status: true }
+  })
+  if (!product || product.status !== 'sold') {
+    return { success: false, error: 'Produk belum terjual, tidak bisa direview' }
+  }
+
   try {
     const newReview = await db.insert(reviews).values({
       product_id:  productId,
@@ -39,7 +47,19 @@ export async function createReviewAction(
       comment:     comment?.trim() || null,
     }).returning({ id: reviews.id })
 
+    const allReviews = await db.select({ rating: reviews.rating }).from(reviews).where(eq(reviews.seller_id, sellerId))
+    if (allReviews.length > 0) {
+      const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0)
+      const averageRating = totalRating / allReviews.length
+      
+      await db.update(profiles)
+        .set({ rating: Math.round(averageRating * 10) / 10 })
+        .where(eq(profiles.id, sellerId))
+    }
+
     revalidatePath(ROUTES.PRODUCT_DETAIL(productId))
+    revalidatePath('/profile')
+    revalidatePath(ROUTES.PROFILE_PUBLIC(sellerId))
     return { success: true, data: { id: newReview[0].id } }
   } catch (err: any) {
     if (err.code === '23505') {

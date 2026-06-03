@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { products, profiles, messages } from '@/lib/db/schema'
-import { eq, and, desc, gte, lte, ilike, inArray } from 'drizzle-orm'
+import { eq, and, desc, gte, lte, ilike, inArray, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { ROUTES } from '@/lib/constants/routes'
@@ -74,6 +74,10 @@ export async function createProductAction(formData: FormData): Promise<ActionRes
 
     if (!newProduct[0]) return { success: false, error: `Gagal menyimpan produk` }
     
+    await db.update(profiles)
+      .set({ total_listings: sql`${profiles.total_listings} + 1` })
+      .where(eq(profiles.id, user.id as string))
+    
     revalidatePath(ROUTES.HOME)
     revalidatePath(ROUTES.PRODUCTS)
     return { success: true, data: { id: newProduct[0].id } }
@@ -119,9 +123,19 @@ export async function deleteProductAction(productId: string): Promise<ActionResu
   const user = session?.user
   if (!user) return { success: false, error: 'Unauthorized' }
 
+  const product = await db.query.products.findFirst({
+    where: and(eq(products.id, productId), eq(products.seller_id, user.id as string)),
+    columns: { is_deleted: true }
+  })
+  if (!product || product.is_deleted) return { success: true }
+
   await db.update(products)
     .set({ is_deleted: true })
     .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
+
+  await db.update(profiles)
+    .set({ total_listings: sql`${profiles.total_listings} - 1` })
+    .where(eq(profiles.id, user.id as string))
 
   revalidatePath(ROUTES.PRODUCTS)
   revalidatePath(ROUTES.PROFILE)
@@ -146,8 +160,15 @@ export async function markAsSoldAction(
   if (product.stock < quantitySold) return { success: false, error: 'Stok tidak mencukupi' }
 
   await db.update(products)
-    .set({ stock: product.stock - quantitySold })
+    .set({ 
+      stock: product.stock - quantitySold,
+      status: (product.stock - quantitySold) <= 0 ? 'sold' : 'available'
+    })
     .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
+
+  await db.update(profiles)
+    .set({ total_sold: sql`${profiles.total_sold} + ${quantitySold}` })
+    .where(eq(profiles.id, user.id as string))
 
   await db.insert(messages).values({
     chat_id:      chatId,
@@ -181,8 +202,15 @@ export async function revertSoldAction(
   if (!product) return { success: false, error: 'Produk tidak ditemukan' }
 
   await db.update(products)
-    .set({ stock: product.stock + quantityToReturn })
+    .set({ 
+      stock: product.stock + quantityToReturn,
+      status: 'available'
+    })
     .where(and(eq(products.id, productId), eq(products.seller_id, user.id as string)))
+
+  await db.update(profiles)
+    .set({ total_sold: sql`${profiles.total_sold} - ${quantityToReturn}` })
+    .where(eq(profiles.id, user.id as string))
 
   await db.insert(messages).values({
     chat_id:      chatId,
@@ -282,6 +310,11 @@ export async function getMarketplaceFeedAction(params?: {
     desc(products.created_at)
   )
 
-  const data = await query
-  return { success: true, data: data ?? [] }
+  try {
+    const data = await query
+    return { success: true, data: data ?? [] }
+  } catch (error: any) {
+    console.error('Error in getMarketplaceFeedAction:', error)
+    return { success: false, error: error.message || 'Gagal mengambil data dari database' }
+  }
 }

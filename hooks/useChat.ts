@@ -22,8 +22,20 @@ export function useChat(chatId: string, initialMessages: MessageWithSender[], cu
     markMessagesReadAction(chatId).catch(console.error)
   }, [chatId])
 
+  const initialLoadRef = useRef(true)
+  
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (bottomRef.current) {
+      const container = bottomRef.current.parentElement
+      if (container) {
+        if (initialLoadRef.current) {
+          container.scrollTo({ top: container.scrollHeight, behavior: 'auto' })
+          initialLoadRef.current = false
+        } else {
+          container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+        }
+      }
+    }
   }, [optimisticMessages])
 
   useEffect(() => {

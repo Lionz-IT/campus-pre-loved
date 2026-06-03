@@ -30,9 +30,11 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ chatI
 
   const [chat, messagesResult] = await Promise.all([
     db.query.chats.findFirst({
-      where: (chats, { eq, or }) =>
-        eq(chats.id, chatId) &&
-        (or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string)) as any),
+      where: (chats, { eq, or, and }) =>
+        and(
+          eq(chats.id, chatId),
+          or(eq(chats.buyer_id, user.id as string), eq(chats.seller_id, user.id as string))
+        ),
       with: {
         product: { columns: { id: true, title: true, image_urls: true, status: true, price: true, seller_id: true } },
         buyer: { columns: { id: true, full_name: true, avatar_url: true } },
